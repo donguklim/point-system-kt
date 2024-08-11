@@ -45,17 +45,17 @@ class PlayGambleTests {
 
     @ParameterizedTest
     @MethodSource("com.example.point.domain.gamble.PlayGambleTestsKt#provideMultiplierWeightMap")
-    fun testPlay(multiplerMap: MutableMap<Int, Int> ) {
+    fun testPlay(multiplierMap: MutableMap<Int, Int> ) {
 
         val consumeCode = "consume-some"
         val rewardCode = "reward-some"
         val game = BettingGame(
             consumeProductCode = consumeCode,
             rewardProductCode = rewardCode,
-            multiplierProbWeights = multiplerMap
+            multiplierProbWeights = multiplierMap
         )
 
-        val has_zero = multiplerMap[0]?.let { it > 0 } ?: false
+        val has_zero = multiplierMap[0]?.let { it > 0 } ?: false
 
         val cosumeCodePrefix = DomainConstants.GAMBLE_GAME_CONSUMPTION_CODE_FORMAT.substring(
             0,
