@@ -2,7 +2,7 @@ package com.example.point.domain.valueObjects
 
 
 class ChargingPoints (
-    val code: String,
+    val code: String,    // unique code for each point event
     val points: Int,
     val productCode: String,
     val description: String,

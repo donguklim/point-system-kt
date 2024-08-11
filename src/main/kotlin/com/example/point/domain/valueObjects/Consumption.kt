@@ -3,7 +3,7 @@ package com.example.point.domain.valueObjects
 import com.example.point.domain.valueObjects.ChargedPoints
 
 class Consumption(
-    val code: String,
+    val code: String,   // unique code for each point event
     val cost: Int,
     val productCode: String,
     val description: String = "",
