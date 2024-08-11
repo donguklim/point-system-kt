@@ -37,6 +37,8 @@ class RandomSelector(multiplierProbWeights: Map<Int, Int>) {
         var covered = 0
         val itemRanges: MutableList<Triple<Int, Int, Int>> = mutableListOf()
         for ((multiplier, probWeight) in multiplierProbWeights){
+            if (probWeight <= 0) continue
+
             itemRanges.add(Triple(multiplier, covered, covered + probWeight - 1))
             covered += probWeight
         }
@@ -49,14 +51,14 @@ class RandomSelector(multiplierProbWeights: Map<Int, Int>) {
     private fun selectRandomWithinRange(begin: Int, end: Int, pos: Int): Int {
         if (begin == end) return weightRanges[begin].first
 
-        val mid = begin + (end - begin) / 2
+        val mid = (end + begin) / 2
         val midItem = weightRanges[mid]
 
         if (midItem.second <= pos && pos <= midItem.third) return midItem.first
 
-        if (pos < midItem.second) return selectRandomWithinRange(begin, midItem.second, pos)
+        if (pos < midItem.second) return selectRandomWithinRange(begin, mid - 1, pos)
 
-        return selectRandomWithinRange(midItem.second, end, pos)
+        return selectRandomWithinRange(mid + 1, end, pos)
     }
     fun selectRandom(): Int {
         val pos = (0..lastVal).random()
