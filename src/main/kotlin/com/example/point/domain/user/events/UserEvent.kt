@@ -4,6 +4,6 @@ open class UserEvent {
 }
 
 class NotEnoughPointEvent(
-    val coast: Int,
+    val cost: Int,
     val totalPoints: Int
 ): UserEvent()

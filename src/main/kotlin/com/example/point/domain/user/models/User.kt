@@ -1,6 +1,5 @@
 package com.example.point.domain.user.models
 
-import kotlin.collections.Iterator
 
 import com.example.point.domain.user.valueObjects.ChargingPoints
 import com.example.point.domain.user.valueObjects.ChargedPoints
@@ -10,7 +9,7 @@ import com.example.point.domain.user.events.*
 
 class User(
     val userId: Int,
-    private var pointsIter: Iterator<ChargedPoints>
+    private var pointsIter: Sequence<ChargedPoints>
 ) {
     private var consumptions: MutableList<Consumption> = mutableListOf()
     private var chargingPoints: MutableList<ChargingPoints> = mutableListOf()
@@ -19,20 +18,20 @@ class User(
     private var fetchedTotalPoints: Int = 0
 
     fun usePoints(consumption: Consumption): Boolean {
-        val coast = consumption.getRemainingCoast()
+        val cost = consumption.getRemainingCoast()
 
-        if (fetchedTotalPoints < coast){
+        if (fetchedTotalPoints < cost){
             for (point in pointsIter) {
                 fetchedPoints.add(point)
                 fetchedTotalPoints += point.getLeftPoints()
 
-                if (fetchedTotalPoints >= coast) break
+                if (fetchedTotalPoints >= cost) break
             }
         }
 
-        if (fetchedTotalPoints < coast){
+        if (fetchedTotalPoints < cost){
             events.add(NotEnoughPointEvent(
-                coast = coast,
+                cost = cost,
                 totalPoints = fetchedTotalPoints)
             )
             return false
@@ -48,7 +47,7 @@ class User(
             userId = userId,
             totalFetchedPoints = fetchedTotalPoints,
             consumption_code = consumption.code,
-            coast = coast
+            cost = cost
         )
 
         consumptions.add(consumption)
@@ -57,6 +56,15 @@ class User(
     }
     fun chargePoints(points: ChargingPoints){
         chargingPoints.add(points)
+    }
+
+    fun collectEvents() = sequence<UserEvent>{
+        while(!events.isEmpty()){
+            val event = events[0]
+            events.removeAt(0)
+            yield(event)
+        }
+
     }
 
 }

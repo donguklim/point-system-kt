@@ -5,8 +5,8 @@ class NotEnoughFetchedPointsError(
     val userId: Int,
     val totalFetchedPoints: Int,
     val consumption_code: String,
-    val coast: Int,
+    val cost: Int,
 ): RuntimeException(
     "User $userId with $totalFetchedPoints points " +
-        "cannot consume item with code: $consumption_code, coast: $coast"
+        "cannot consume item with code: $consumption_code, coast: $cost"
 )
