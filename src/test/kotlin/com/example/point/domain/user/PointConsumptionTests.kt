@@ -9,9 +9,9 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import com.example.point.domain.user.models.User
-import com.example.point.domain.user.valueObjects.Consumption
-import com.example.point.domain.user.valueObjects.ChargedPoints
-import com.example.point.domain.user.events.NotEnoughPointEvent
+import com.example.point.domain.valueObjects.Consumption
+import com.example.point.domain.valueObjects.ChargedPoints
+import com.example.point.domain.events.NotEnoughPointEvent
 
 fun getPointIterator(points: List<Int>) = sequence {
     val chargeID = (1..10323).random()

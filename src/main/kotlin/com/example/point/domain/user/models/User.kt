@@ -1,10 +1,12 @@
 package com.example.point.domain.user.models
 
-import com.example.point.domain.user.valueObjects.ChargingPoints
-import com.example.point.domain.user.valueObjects.ChargedPoints
-import com.example.point.domain.user.valueObjects.Consumption
+import com.example.point.domain.events.NotEnoughPointEvent
+import com.example.point.domain.events.UserEvent
+import com.example.point.domain.valueObjects.ChargingPoints
+import com.example.point.domain.valueObjects.ChargedPoints
+import com.example.point.domain.valueObjects.Consumption
 import com.example.point.domain.user.errors.NotEnoughFetchedPointsError
-import com.example.point.domain.user.events.*
+import com.example.point.domain.events.*
 
 class User(
     val userId: Int,
@@ -29,7 +31,8 @@ class User(
         }
 
         if (fetchedTotalPoints < cost){
-            events.add(NotEnoughPointEvent(
+            events.add(
+                NotEnoughPointEvent(
                 cost = cost,
                 totalPoints = fetchedTotalPoints)
             )

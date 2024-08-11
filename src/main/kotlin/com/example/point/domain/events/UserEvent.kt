@@ -1,4 +1,4 @@
-package com.example.point.domain.user.events
+package com.example.point.domain.events
 
 open class UserEvent {
 }

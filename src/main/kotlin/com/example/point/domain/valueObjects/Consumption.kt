@@ -1,6 +1,6 @@
-package com.example.point.domain.user.valueObjects
+package com.example.point.domain.valueObjects
 
-import com.example.point.domain.user.valueObjects.ChargedPoints
+import com.example.point.domain.valueObjects.ChargedPoints
 
 class Consumption(
     val code: String,
@@ -10,6 +10,10 @@ class Consumption(
 ) {
     private var consumingPoints: Int = 0
     private var consumingChargedPoints: MutableList<ChargedPoints.PointUsage> = mutableListOf()
+
+    init {
+        if (cost <= 0) throw IllegalArgumentException("cost must be > 0 but was: $cost")
+    }
 
     fun consume(points: ChargedPoints): Int{
         if (consumingPoints == cost) return 0

@@ -1,4 +1,4 @@
-package com.example.point.domain.user.valueObjects
+package com.example.point.domain.valueObjects
 
 import kotlin.math.min
 
