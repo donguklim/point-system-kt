@@ -26,4 +26,11 @@ class Consumption(
     }
 
     fun getRemainingCoast(): Int  = cost - consumingPoints
+
+    fun collectUsedCharges(): List<ChargedPoints.PointUsage>{
+        val ret = consumingChargedPoints
+        consumingChargedPoints = mutableListOf()
+        return ret
+
+    }
 }

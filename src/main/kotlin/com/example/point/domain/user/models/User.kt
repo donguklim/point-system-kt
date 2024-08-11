@@ -1,6 +1,5 @@
 package com.example.point.domain.user.models
 
-
 import com.example.point.domain.user.valueObjects.ChargingPoints
 import com.example.point.domain.user.valueObjects.ChargedPoints
 import com.example.point.domain.user.valueObjects.Consumption
@@ -37,13 +36,13 @@ class User(
             return false
         }
 
-        while(consumption.getRemainingCoast() > 0 || fetchedPoints.size == 0){
+        while(consumption.getRemainingCoast() > 0 && fetchedPoints.size > 0){
             fetchedTotalPoints -= consumption.consume(fetchedPoints[0])
-            if (fetchedPoints[0].getLeftPoints() <= 0) fetchedPoints.removeAt(0)
-
+            if (fetchedPoints[0].getLeftPoints() <= 0)
+                fetchedPoints.removeAt(0)
         }
 
-        if (consumption.getRemainingCoast() >= 0) throw NotEnoughFetchedPointsError(
+        if (consumption.getRemainingCoast() > 0) throw NotEnoughFetchedPointsError(
             userId = userId,
             totalFetchedPoints = fetchedTotalPoints,
             consumption_code = consumption.code,
@@ -59,12 +58,28 @@ class User(
     }
 
     fun collectEvents() = sequence<UserEvent>{
-        while(!events.isEmpty()){
+        while(events.isNotEmpty()){
             val event = events[0]
             events.removeAt(0)
             yield(event)
         }
 
+    }
+
+    fun collectConsumptions() = sequence<Consumption>{
+        while(consumptions.isNotEmpty()){
+            val consumption = consumptions[0]
+            consumptions.removeAt(0)
+            yield(consumption)
+        }
+    }
+
+    fun collectChargingPoints() = sequence<ChargingPoints>{
+        while(chargingPoints.isNotEmpty()){
+            val charging = chargingPoints[0]
+            chargingPoints.removeAt(0)
+            yield(charging)
+        }
     }
 
 }
