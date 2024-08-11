@@ -2,6 +2,7 @@ package com.example.point.domain.user.models
 
 import kotlin.collections.Iterator
 
+import com.example.point.domain.user.valueObjects.ChargingPoints
 import com.example.point.domain.user.valueObjects.ChargedPoints
 import com.example.point.domain.user.valueObjects.Consumption
 import com.example.point.domain.user.errors.NotEnoughFetchedPointsError
@@ -12,6 +13,7 @@ class User(
     private var pointsIter: Iterator<ChargedPoints>
 ) {
     private var consumptions: MutableList<Consumption> = mutableListOf()
+    private var chargingPoints: MutableList<ChargingPoints> = mutableListOf()
     private var fetchedPoints: MutableList<ChargedPoints> = mutableListOf()
     private var events: MutableList<UserEvent> = mutableListOf()
     private var fetchedTotalPoints: Int = 0
@@ -52,6 +54,9 @@ class User(
         consumptions.add(consumption)
 
         return true
+    }
+    fun chargePoints(points: ChargingPoints){
+        chargingPoints.add(points)
     }
 
 }
