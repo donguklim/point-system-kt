@@ -10,5 +10,8 @@ object DomainConstants {
     const val GAMBLE_GAME_CONSUMPTION_CODE_FORMAT = "betting:consume:%d"
     const val GAMBLE_GAME_REWARD_CODE_FORMAT = "betting:reward:%d"
 
+    const val DEFAULT_GAME_BET_PRODUCT_CODE = "game_betting"
+    const val DEFAULT_GAME_REWARD_PRODUCT_CODE = "game_reward"
+
 }
 

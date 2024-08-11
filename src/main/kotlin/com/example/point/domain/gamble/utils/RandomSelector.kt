@@ -22,6 +22,8 @@ class RandomSelector(multiplierProbWeights: Map<Int, Int>) {
         if (multiplierProbWeights.isEmpty()) throw IllegalArgumentException("empty prob weights is not Allowed")
         var gcdVal = multiplierProbWeights.values.first()
         for ((multiplier, probWeight) in multiplierProbWeights){
+            if (probWeight <= 0) continue
+
             if (multiplier < 0) throw IllegalArgumentException("multiplier must be > 0")
             gcdVal = getGCD(gcdVal, probWeight)
         }

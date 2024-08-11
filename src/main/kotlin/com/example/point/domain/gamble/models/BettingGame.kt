@@ -6,10 +6,9 @@ import com.example.point.domain.DomainConstants
 import com.example.point.domain.gamble.utils.RandomSelector
 
 
-
 class BettingGame(
-    private val consumeProductCode: String,
-    private val rewardProductCode: String,
+    private val consumeProductCode: String = DomainConstants.DEFAULT_GAME_BET_PRODUCT_CODE,
+    private val rewardProductCode: String = DomainConstants.DEFAULT_GAME_REWARD_PRODUCT_CODE,
     private val rewardDesc: String = "",
     private val costDesc: String = "",
     multiplierProbWeights: MutableMap<Int, Int>
@@ -17,6 +16,10 @@ class BettingGame(
     private val selector: RandomSelector = RandomSelector(multiplierProbWeights)
 
     fun play(points: Int): Pair<Consumption, ChargingPoints?> {
+        if (points <= 0) throw IllegalArgumentException(
+            "betting points must be greater than zero. but it is $points"
+        )
+
         val relativeTimestamp = System.currentTimeMillis() / (
                 1000 / DomainConstants.TIME_RECORDING_SCALE
                 ) - DomainConstants.SCALED_START_TIMESTAMP

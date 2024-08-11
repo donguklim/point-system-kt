@@ -1,9 +1,6 @@
 package com.example.point.domain.user
 
-import kotlin.test.assertIs
-
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Assertions.*
+import kotlin.test.*
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -63,11 +60,11 @@ class PointConsumptionTests {
         assertFalse(user.usePoints(consumingItem))
 
         val events = user.collectEvents().toList()
-        assertEquals(events.size, 1)
+        assertEquals(1, events.size)
 
         assertIs<NotEnoughPointEvent>(events[0])
 
-        assertEquals(user.collectConsumptions().toList().size, 0)
+        assertEquals(0, user.collectConsumptions().toList().size)
 
     }
 
@@ -86,15 +83,15 @@ class PointConsumptionTests {
         )
         assertTrue(user.usePoints(consumingItem))
 
-        assertEquals(user.collectEvents().toList().size, 0)
+        assertEquals(0, user.collectEvents().toList().size)
 
         val consumptions = user.collectConsumptions().toList()
-        assertEquals(consumptions.size, 1)
+        assertEquals(1, consumptions.size)
         val consumption = consumptions[0]
         assertEquals(consumption.getRemainingCoast(), 0)
         val usages = consumption.collectUsedCharges()
-        assertEquals(usages.size, expectedNumUsages)
-        assertEquals(usages.sumOf{usage -> usage.points}, cost)
+        assertEquals(expectedNumUsages, usages.size)
+        assertEquals(cost, usages.sumOf{usage -> usage.points})
 
     }
 
