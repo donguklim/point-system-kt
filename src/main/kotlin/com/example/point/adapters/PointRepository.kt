@@ -3,9 +3,17 @@ package com.example.point.adapters
 import com.example.point.domain.valueObjects.ChargedPoints
 import com.example.point.domain.valueObjects.ChargingPoints
 import com.example.point.domain.valueObjects.Consumption
+import com.example.point.domain.user.models.User
 
 interface PointRepository {
-    fun getPointSeq (userId: Int): Sequence<ChargedPoints>
-    suspend fun updateCharge(userId: Int, chargedPoint: ChargingPoints)
-    suspend fun updateConsumption(userId: Int, consumption: Consumption)
+    private fun getPointSeq (userId: Int): Sequence<ChargedPoints> {
+        return sequence {}
+    }
+
+    suspend fun updateCharges(userId: Int, chargedPoint: List<ChargingPoints>)
+    suspend fun updateConsumptions(userId: Int, consumption: List<Consumption>)
+
+    fun getUser(userId: Int) : User {
+        return User(userId, getPointSeq(userId))
+    }
 }
