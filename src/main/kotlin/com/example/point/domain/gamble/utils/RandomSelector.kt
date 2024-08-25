@@ -11,7 +11,6 @@ fun getGCD(a: Int, b: Int): Int {
     }
 
     return val1
-
 }
 
 class RandomSelector(multiplierProbWeights: Map<Int, Int>) {
@@ -47,22 +46,25 @@ class RandomSelector(multiplierProbWeights: Map<Int, Int>) {
         lastVal = itemRanges.last().third
     }
 
-
-    private fun selectRandomWithinRange(begin: Int, end: Int, pos: Int): Int {
-        if (begin == end) return weightRanges[begin].first
-
-        val mid = (end + begin) / 2
-        val midItem = weightRanges[mid]
-
-        if (midItem.second <= pos && pos <= midItem.third) return midItem.first
-
-        if (pos < midItem.second) return selectRandomWithinRange(begin, mid - 1, pos)
-
-        return selectRandomWithinRange(mid + 1, end, pos)
-    }
     fun selectRandom(): Int {
         val pos = (0..lastVal).random()
 
-        return selectRandomWithinRange(0,weightRanges.size - 1, pos)
+        var begin = 0
+        var end = weightRanges.size - 1
+
+        while (begin < end){
+            val mid = (end + begin) / 2
+            val midItem = weightRanges[mid]
+
+            if (midItem.second <= pos && pos <= midItem.third) return midItem.first
+
+            if (pos < midItem.second) {
+                end = mid - 1
+            } else {
+                begin = mid + 1
+            }
+        }
+
+        return weightRanges[begin].first
     }
 }
