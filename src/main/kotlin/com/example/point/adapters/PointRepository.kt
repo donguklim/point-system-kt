@@ -5,10 +5,15 @@ import com.example.point.domain.valueObjects.ChargedPoints
 import com.example.point.domain.valueObjects.ChargingPoints
 import com.example.point.domain.valueObjects.Consumption
 
+import kotlinx.coroutines.flow.Flow
+import org.jetbrains.k
+
 interface PointRepository {
-    private fun getPointSeq(userId: Int): Sequence<ChargedPoints> {
+    fun getPointSeq(userId: Int): Sequence<ChargedPoints> {
         return sequence {}
     }
+
+    fun getPointFlow(userId: Int): Flow<ChargedPoints>
 
     suspend fun updateCharges(
         userId: Int,
