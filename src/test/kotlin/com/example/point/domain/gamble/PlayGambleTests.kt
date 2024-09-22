@@ -5,7 +5,9 @@ import com.example.point.domain.gamble.models.BettingGame
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import kotlin.test.*
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 fun provideInvalidMultiplierWeightMap(): List<Arguments> {
     return listOf(
@@ -48,7 +50,7 @@ class PlayGambleTests {
                 multiplierProbWeights = multiplierMap,
             )
 
-        val has_zero = multiplierMap[0]?.let { it > 0 } ?: false
+        val hasZero = multiplierMap[0]?.let { it > 0 } ?: false
 
         val cosumeCodePrefix =
             DomainConstants.GAMBLE_GAME_CONSUMPTION_CODE_FORMAT.substring(
@@ -70,7 +72,7 @@ class PlayGambleTests {
             assertTrue(
                 consumption.code.startsWith(cosumeCodePrefix),
             )
-            reward ?: assertTrue(has_zero)
+            reward ?: assertTrue(hasZero)
             reward ?: continue
 
             assertEquals(rewardCode, reward.productCode)

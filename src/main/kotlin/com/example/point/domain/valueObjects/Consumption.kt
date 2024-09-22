@@ -1,7 +1,8 @@
 package com.example.point.domain.valueObjects
 
 class Consumption(
-    val code: String, // unique code for each point event
+    val code: String,
+    // unique code for each point event
     val cost: Int,
     val productCode: String,
     val description: String = "",
@@ -13,7 +14,7 @@ class Consumption(
         if (cost <= 0) throw IllegalArgumentException("cost must be > 0 but was: $cost")
     }
 
-    fun consume(points: ChargedPoints): Int  {
+    fun consume(points: ChargedPoints): Int {
         if (consumingPoints == cost) return 0
 
         val remaining = cost - consumingPoints
@@ -29,7 +30,7 @@ class Consumption(
 
     fun getRemainingCoast(): Int = cost - consumingPoints
 
-    fun collectUsedCharges(): List<ChargedPoints.PointUsage>  {
+    fun collectUsedCharges(): List<ChargedPoints.PointUsage> {
         val ret = consumingChargedPoints
         consumingChargedPoints = mutableListOf()
         return ret

@@ -7,7 +7,10 @@ import com.example.point.domain.valueObjects.Consumption
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import kotlin.test.*
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 fun getPointIterator(points: List<Int>) =
     sequence {
@@ -72,7 +75,7 @@ class PointConsumptionTests {
         cost: Int,
         pointsList: List<Int>,
         expectedNumUsages: Int,
-    )  {
+    ) {
         val user =
             User(
                 (3..23233).random(),

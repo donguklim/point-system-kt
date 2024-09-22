@@ -29,15 +29,14 @@ class RandomSelector(multiplierProbWeights: Map<Int, Int>) {
             if (multiplier < 0) throw IllegalArgumentException("multiplier must be > 0")
             gcdVal = getGCD(gcdVal, probWeight)
         }
-        if (gcdVal > 1)
-            {
-                for (multiplier in multiplierProbWeights.keys) {
-                    multiplierProbWeights[multiplier]?.let {
-                            weight ->
-                        weight / gcdVal
-                    }
+        if (gcdVal > 1) {
+            for (multiplier in multiplierProbWeights.keys) {
+                multiplierProbWeights[multiplier]?.let {
+                        weight ->
+                    weight / gcdVal
                 }
             }
+        }
         var covered = 0
         val itemRanges: MutableList<Triple<Int, Int, Int>> = mutableListOf()
         for ((multiplier, probWeight) in multiplierProbWeights) {

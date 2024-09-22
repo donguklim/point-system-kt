@@ -10,7 +10,7 @@ class ChargedPoints(
 
     class PointUsage(val chargeId: Int, val points: Int)
 
-    fun getLeftPoints(): Int  {
+    fun getLeftPoints(): Int {
         return initPoint - usedPoints
     }
 

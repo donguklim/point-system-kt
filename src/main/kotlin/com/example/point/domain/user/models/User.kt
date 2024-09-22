@@ -1,6 +1,5 @@
 package com.example.point.domain.user.models
 
-import com.example.point.domain.events.*
 import com.example.point.domain.events.NotEnoughPointEvent
 import com.example.point.domain.events.UserEvent
 import com.example.point.domain.user.errors.NotEnoughFetchedPointsError
@@ -21,26 +20,24 @@ class User(
     fun usePoints(consumption: Consumption): Boolean {
         val cost = consumption.getRemainingCoast()
 
-        if (fetchedTotalPoints < cost)
-            {
-                for (point in pointsIter) {
-                    fetchedPoints.add(point)
-                    fetchedTotalPoints += point.getLeftPoints()
+        if (fetchedTotalPoints < cost) {
+            for (point in pointsIter) {
+                fetchedPoints.add(point)
+                fetchedTotalPoints += point.getLeftPoints()
 
-                    if (fetchedTotalPoints >= cost) break
-                }
+                if (fetchedTotalPoints >= cost) break
             }
+        }
 
-        if (fetchedTotalPoints < cost)
-            {
-                events.add(
-                    NotEnoughPointEvent(
-                        cost = cost,
-                        totalPoints = fetchedTotalPoints,
-                    ),
-                )
-                return false
-            }
+        if (fetchedTotalPoints < cost) {
+            events.add(
+                NotEnoughPointEvent(
+                    cost = cost,
+                    totalPoints = fetchedTotalPoints,
+                ),
+            )
+            return false
+        }
 
         while (consumption.getRemainingCoast() > 0 && fetchedPoints.size > 0) {
             fetchedTotalPoints -= consumption.consume(fetchedPoints[0])
@@ -63,7 +60,7 @@ class User(
         return true
     }
 
-    fun chargePoints(points: ChargingPoints)  {
+    fun chargePoints(points: ChargingPoints) {
         chargingPoints.add(points)
     }
 
