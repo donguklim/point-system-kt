@@ -4,9 +4,7 @@ import com.example.point.domain.user.models.User
 import com.example.point.domain.valueObjects.ChargedPoints
 import com.example.point.domain.valueObjects.ChargingPoints
 import com.example.point.domain.valueObjects.Consumption
-
 import kotlinx.coroutines.flow.Flow
-import org.jetbrains.k
 
 interface PointRepository {
     fun getPointSeq(userId: Int): Sequence<ChargedPoints> {
