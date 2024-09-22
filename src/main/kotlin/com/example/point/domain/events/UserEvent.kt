@@ -1,9 +1,8 @@
 package com.example.point.domain.events
 
-open class UserEvent {
-}
+open class UserEvent
 
 class NotEnoughPointEvent(
     val cost: Int,
-    val totalPoints: Int
-): UserEvent()
+    val totalPoints: Int,
+) : UserEvent()

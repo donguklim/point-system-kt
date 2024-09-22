@@ -1,13 +1,11 @@
 package com.example.point.domain.gamble
 
-import kotlin.test.*
-
+import com.example.point.domain.DomainConstants
+import com.example.point.domain.gamble.models.BettingGame
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-
-import com.example.point.domain.gamble.models.BettingGame
-import com.example.point.domain.DomainConstants
+import kotlin.test.*
 
 fun provideInvalidMultiplierWeightMap(): List<Arguments> {
     return listOf(
@@ -18,71 +16,67 @@ fun provideInvalidMultiplierWeightMap(): List<Arguments> {
 }
 
 fun provideMultiplierWeightMap(): List<Arguments> {
-
     return listOf(
         Arguments.of(mutableMapOf(0 to 1, 1 to 1, 2 to 1, 3 to 1)),
         Arguments.of(mutableMapOf(1 to 1, 2 to 200, 3 to 50)),
         Arguments.of(mutableMapOf(0 to 200, 1 to 10, 2 to 1)),
-        Arguments.of((0..1000).associateBy({it}, {1})),
-        Arguments.of((0..1000).associateBy({it}, {1000 - it}))
+        Arguments.of((0..1000).associateBy({ it }, { 1 })),
+        Arguments.of((0..1000).associateBy({ it }, { 1000 - it })),
     )
 }
 
-
 class PlayGambleTests {
-
     @ParameterizedTest
     @MethodSource("com.example.point.domain.gamble.PlayGambleTestsKt#provideInvalidMultiplierWeightMap")
-    fun testInvalidGameInitialization(multiplerMap: MutableMap<Int, Int> ) {
-
+    fun testInvalidGameInitialization(multiplerMap: MutableMap<Int, Int>) {
         assertFailsWith<IllegalArgumentException>(
             block = {
                 BettingGame(multiplierProbWeights = multiplerMap)
-            }
+            },
         )
-
     }
 
     @ParameterizedTest
     @MethodSource("com.example.point.domain.gamble.PlayGambleTestsKt#provideMultiplierWeightMap")
-    fun testPlay(multiplierMap: MutableMap<Int, Int> ) {
-
+    fun testPlay(multiplierMap: MutableMap<Int, Int>) {
         val consumeCode = "consume-some"
         val rewardCode = "reward-some"
-        val game = BettingGame(
-            consumeProductCode = consumeCode,
-            rewardProductCode = rewardCode,
-            multiplierProbWeights = multiplierMap
-        )
+        val game =
+            BettingGame(
+                consumeProductCode = consumeCode,
+                rewardProductCode = rewardCode,
+                multiplierProbWeights = multiplierMap,
+            )
 
         val has_zero = multiplierMap[0]?.let { it > 0 } ?: false
 
-        val cosumeCodePrefix = DomainConstants.GAMBLE_GAME_CONSUMPTION_CODE_FORMAT.substring(
-            0,
-            DomainConstants.GAMBLE_GAME_CONSUMPTION_CODE_FORMAT.lastIndex - 1
-        )
-        val rewardCodePrefix = DomainConstants.GAMBLE_GAME_REWARD_CODE_FORMAT.substring(
-            0,
-            DomainConstants.GAMBLE_GAME_REWARD_CODE_FORMAT.lastIndex - 1
-        )
+        val cosumeCodePrefix =
+            DomainConstants.GAMBLE_GAME_CONSUMPTION_CODE_FORMAT.substring(
+                0,
+                DomainConstants.GAMBLE_GAME_CONSUMPTION_CODE_FORMAT.lastIndex - 1,
+            )
+        val rewardCodePrefix =
+            DomainConstants.GAMBLE_GAME_REWARD_CODE_FORMAT.substring(
+                0,
+                DomainConstants.GAMBLE_GAME_REWARD_CODE_FORMAT.lastIndex - 1,
+            )
 
-        for (some in 0..30){
+        for (some in 0..30) {
             val betPoint = some + 1
             val (consumption, reward) = game.play(some + 1)
 
             assertEquals(betPoint, consumption.cost)
             assertEquals(consumeCode, consumption.productCode)
             assertTrue(
-                consumption.code.startsWith(cosumeCodePrefix)
+                consumption.code.startsWith(cosumeCodePrefix),
             )
-            reward?: assertTrue(has_zero)
-            reward?: continue
+            reward ?: assertTrue(has_zero)
+            reward ?: continue
 
             assertEquals(rewardCode, reward.productCode)
             assertTrue(
-                reward.code.startsWith(rewardCodePrefix)
+                reward.code.startsWith(rewardCodePrefix),
             )
-
         }
     }
 }

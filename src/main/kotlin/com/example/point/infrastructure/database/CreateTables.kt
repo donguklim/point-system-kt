@@ -1,7 +1,5 @@
 package com.example.point.infrastructure.database
 
-import com.example.point.infrastructure.database.PointDetails
-import com.example.point.infrastructure.database.PointEvents
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
@@ -12,6 +10,5 @@ fun main() {
         addLogger(StdOutSqlLogger)
 
         SchemaUtils.create(PointEvents, PointDetails)
-
     }
 }

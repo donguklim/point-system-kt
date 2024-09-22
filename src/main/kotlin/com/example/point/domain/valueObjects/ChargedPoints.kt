@@ -2,15 +2,15 @@ package com.example.point.domain.valueObjects
 
 import kotlin.math.min
 
-class ChargedPoints (
+class ChargedPoints(
     val chargeId: Int,
-    private val initPoint: Int
-){
+    private val initPoint: Int,
+) {
     private var usedPoints: Int = 0
 
-    class PointUsage (val chargeId: Int, val points: Int)
+    class PointUsage(val chargeId: Int, val points: Int)
 
-    fun getLeftPoints(): Int{
+    fun getLeftPoints(): Int  {
         return initPoint - usedPoints
     }
 

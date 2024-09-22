@@ -1,10 +1,13 @@
 package com.example.point.domain.gamble.utils
 
-fun getGCD(a: Int, b: Int): Int {
+fun getGCD(
+    a: Int,
+    b: Int,
+): Int {
     var val1 = a
     var val2 = b
 
-    while (val2 > 0){
+    while (val2 > 0) {
         val temp = val1 % val2
         val1 = val2
         val2 = temp
@@ -20,22 +23,24 @@ class RandomSelector(multiplierProbWeights: Map<Int, Int>) {
     init {
         if (multiplierProbWeights.isEmpty()) throw IllegalArgumentException("empty prob weights is not Allowed")
         var gcdVal = multiplierProbWeights.values.first()
-        for ((multiplier, probWeight) in multiplierProbWeights){
+        for ((multiplier, probWeight) in multiplierProbWeights) {
             if (probWeight <= 0) continue
 
             if (multiplier < 0) throw IllegalArgumentException("multiplier must be > 0")
             gcdVal = getGCD(gcdVal, probWeight)
         }
-        if (gcdVal > 1){
-            for (multiplier in multiplierProbWeights.keys){
-                multiplierProbWeights[multiplier]?.let{
-                        weight -> weight / gcdVal
+        if (gcdVal > 1)
+            {
+                for (multiplier in multiplierProbWeights.keys) {
+                    multiplierProbWeights[multiplier]?.let {
+                            weight ->
+                        weight / gcdVal
+                    }
                 }
             }
-        }
         var covered = 0
         val itemRanges: MutableList<Triple<Int, Int, Int>> = mutableListOf()
-        for ((multiplier, probWeight) in multiplierProbWeights){
+        for ((multiplier, probWeight) in multiplierProbWeights) {
             if (probWeight <= 0) continue
 
             itemRanges.add(Triple(multiplier, covered, covered + probWeight - 1))
@@ -52,7 +57,7 @@ class RandomSelector(multiplierProbWeights: Map<Int, Int>) {
         var begin = 0
         var end = weightRanges.size - 1
 
-        while (begin < end){
+        while (begin < end) {
             val mid = (end + begin) / 2
             val midItem = weightRanges[mid]
 
