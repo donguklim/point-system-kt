@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
@@ -21,6 +22,8 @@ import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.sql.transactions.transaction
+import kotlin.coroutines.CoroutineContext
 
 class ExposedPointRepository(
     private val expiryDays: Int,
@@ -37,23 +40,22 @@ class ExposedPointRepository(
 
             val pointSum = PointDetails.numPoints.sum().alias("point_sum")
 
-            newSuspendedTransaction(Dispatchers.IO) {
-                PointDetails.select(
-                    pointSum,
-                    PointDetails.chargeId,
-                    PointDetails.expireAt,
-                ).where(
-                    (PointDetails.userId eq userId) and (PointDetails.expireAt greater thresholdDateTime),
-                ).forUpdate().groupBy(
-                    PointDetails.expireAt,
-                    PointDetails.chargeId,
-                ).orderBy(PointDetails.expireAt to SortOrder.ASC).filter {
-                    ((it[pointSum] ?: 0) > 0)
-                }.forEach {
-                    emit(ChargedPoints(it[PointDetails.chargeId], it[pointSum] ?: 0))
-                }
+            PointDetails.select(
+                pointSum,
+                PointDetails.chargeId,
+                PointDetails.expireAt,
+            ).where(
+                (PointDetails.userId eq userId) and (PointDetails.expireAt greater thresholdDateTime),
+            ).forUpdate().groupBy(
+                PointDetails.expireAt,
+                PointDetails.chargeId,
+            ).orderBy(PointDetails.expireAt to SortOrder.ASC).filter {
+                ((it[pointSum] ?: 0) > 0)
+            }.forEach {
+                emit(ChargedPoints(it[PointDetails.chargeId], it[pointSum] ?: 0))
             }
-        }.buffer(chargeBufferSize)
+        }
+
 
     override fun getPointSeq(userId: Int): Sequence<ChargedPoints> {
         val thresholdDateTime =
