@@ -336,7 +336,7 @@ class ExposedPointRepositoryTests {
                                         assertEquals(expectedPoints[charge.chargeId], charge.getLeftPoints())
                                     }
 
-                                    assertEquals(expectedPoints.size, chargeCount, "${testUserId} does not have expected points in flow")
+                                    assertEquals(expectedPoints.size, chargeCount, "$testUserId does not have expected points in flow")
                                 }
                             }
                         jobs.add(job)
@@ -351,6 +351,5 @@ class ExposedPointRepositoryTests {
             PointDetails.deleteAll()
             PointEvents.deleteAll()
         }
-
     }
 }
