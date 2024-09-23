@@ -71,13 +71,11 @@ class ExposedPointRepository(
                 thresholdChargeId = point.chargeId
                 count++
                 if (point.getLeftPoints() > 0){
-                    println("flow ${userId}: ${thresholdChargeId} - ${point.getLeftPoints()}")
                     emit(point)
                 }
                 
             }
         } while (count == chunkSize)
-        println("flow ${userId} end ")
     }
 
     override fun getPointSeq(userId: Int): Sequence<ChargedPoints> =
@@ -123,7 +121,6 @@ class ExposedPointRepository(
                     count++
                     if ((it[pointSum] ?: 0) > 0) {
                         yield(ChargedPoints(it[PointDetails.chargeId], it[pointSum]!!))
-                        println("seq $userId: ${it[PointDetails.chargeId]} - ${it[pointSum]} ")
                     }
 
                 }
