@@ -330,9 +330,14 @@ class ExposedPointRepositoryTests {
                                     assertContains(userExpectedPoints, testUserId)
                                     val expectedPoints = userExpectedPoints[testUserId]!!
                                     var chargeCount = 0
-                                    repo.getPointFlow(testUserId).collect { charge ->
-                                        chargeCount++
+                                    for (charge in repo.getPointSeq(testUserId)) {
+                                        assertContains(
+                                            expectedPoints,
+                                            charge.chargeId,
+                                            "The map should contain the key '${charge.chargeId}'",
+                                        )
                                         assertEquals(expectedPoints[charge.chargeId], charge.getLeftPoints())
+                                        chargeCount++
                                     }
 
                                     assertEquals(expectedPoints.size, chargeCount, "$testUserId does not have expected points in flow")
