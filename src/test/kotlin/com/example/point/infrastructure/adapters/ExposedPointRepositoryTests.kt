@@ -12,9 +12,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
-import org.jetbrains.exposed.sql.batchInsert
-import org.jetbrains.exposed.sql.deleteAll
-import org.jetbrains.exposed.sql.insertAndGetId
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -181,7 +179,7 @@ class ExposedPointRepositoryTests {
     @Test
     fun pointFlow() {
         val expireDays = 37
-        val testUserIds = (333..338).toList()
+        val testUserIds = (333..358).toList()
         val userExpectedPoints: MutableMap<Int, Map<Int, Int>> = mutableMapOf()
         for (testUserId in testUserIds) {
             val charges: Map<Int, List<Int>> =
@@ -328,6 +326,7 @@ class ExposedPointRepositoryTests {
                         val job =
                             launch {
                                 newSuspendedTransaction(Dispatchers.IO) {
+                                    //addLogger(StdOutSqlLogger)
                                     assertContains(userExpectedPoints, testUserId)
                                     val expectedPoints = userExpectedPoints[testUserId]!!
                                     var chargeCount = 0

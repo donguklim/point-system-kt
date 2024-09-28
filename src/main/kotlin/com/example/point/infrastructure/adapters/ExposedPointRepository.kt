@@ -35,54 +35,26 @@ class ExposedPointRepository(
                     DateTimeUnit.DAY,
                     TimeZone.UTC,
                 ).toLocalDateTime(TimeZone.UTC)
-            var thresholdChargeId = 0
 
             val pointSum = PointDetails.numPoints.sum().alias("point_sum")
 
-            PointDetails.select(PointDetails.id).where(
-                (PointDetails.userId eq userId) and (PointDetails.expireAt greater thresholdDateTime),
-            ).forUpdate()
-
-            do {
-                var count = 0
-                val awaitingPoints =
-                    coroutineScope {
-                        async {
-                            PointDetails.select(
-                                pointSum,
-                                PointDetails.chargeId,
-                                PointDetails.expireAt,
-                            ).where(
-                                (PointDetails.userId eq userId)
-                                    and (
-                                        (PointDetails.expireAt greater thresholdDateTime)
-                                            or (
-                                                (PointDetails.expireAt eq thresholdDateTime)
-                                                    and (PointDetails.chargeId greater thresholdChargeId)
-                                            )
-                                    ),
-                            ).groupBy(
-                                PointDetails.expireAt,
-                                PointDetails.chargeId,
-                            ).orderBy(
-                                PointDetails.expireAt to SortOrder.ASC,
-                                PointDetails.chargeId to SortOrder.ASC,
-                            ).limit(chunkSize).map {
-                                Pair(ChargedPoints(it[PointDetails.chargeId], it[pointSum] ?: 0), it[PointDetails.expireAt])
-                            }
-                        }
-                    }
-
-                awaitingPoints.await().forEach {
-                    val (point, expireAt) = it
-                    thresholdDateTime = expireAt
-                    thresholdChargeId = point.chargeId
-                    count++
-                    if (point.getLeftPoints() > 0) {
-                        emit(point)
-                    }
-                }
-            } while (count == chunkSize)
+            PointDetails.select(
+                pointSum,
+                PointDetails.chargeId,
+                PointDetails.expireAt,
+            ).where(
+                (PointDetails.userId eq userId) and (PointDetails.expireAt greater thresholdDateTime)
+            ).forUpdate().groupBy(
+                PointDetails.expireAt,
+                PointDetails.chargeId,
+            ).orderBy(
+                PointDetails.expireAt to SortOrder.ASC,
+                PointDetails.chargeId to SortOrder.ASC,
+            ).filter{
+                (it[pointSum] ?: 0) > 0
+            }.forEach {
+                emit(ChargedPoints(it[PointDetails.chargeId], it[pointSum]!!))
+            }
         }
 
     override fun getPointSeq(userId: Int): Sequence<ChargedPoints> =
@@ -95,42 +67,23 @@ class ExposedPointRepository(
                     TimeZone.UTC,
                 ).toLocalDateTime(TimeZone.UTC)
 
-            var thresholdChargeId = 0
-
-            PointDetails.select(PointDetails.id).where(
-                (PointDetails.userId eq userId) and (PointDetails.expireAt greater thresholdDateTime),
-            ).forUpdate()
-
-            do {
-                var count = 0
-                PointDetails.select(
-                    pointSum,
-                    PointDetails.chargeId,
-                    PointDetails.expireAt,
-                ).where(
-                    (PointDetails.userId eq userId)
-                        and (
-                            (PointDetails.expireAt greater thresholdDateTime)
-                                or (
-                                    (PointDetails.expireAt eq thresholdDateTime)
-                                        and (PointDetails.chargeId greater thresholdChargeId)
-                                )
-                        ),
-                ).groupBy(
-                    PointDetails.expireAt,
-                    PointDetails.chargeId,
-                ).orderBy(
-                    PointDetails.expireAt to SortOrder.ASC,
-                    PointDetails.chargeId to SortOrder.ASC,
-                ).limit(chunkSize).forEach {
-                    thresholdDateTime = it[PointDetails.expireAt]
-                    thresholdChargeId = it[PointDetails.chargeId]
-                    count++
-                    if ((it[pointSum] ?: 0) > 0) {
-                        yield(ChargedPoints(it[PointDetails.chargeId], it[pointSum]!!))
-                    }
-                }
-            } while (count == chunkSize)
+            PointDetails.select(
+                pointSum,
+                PointDetails.chargeId,
+                PointDetails.expireAt,
+            ).where(
+                (PointDetails.userId eq userId) and (PointDetails.expireAt greater thresholdDateTime)
+            ).forUpdate().groupBy(
+                PointDetails.expireAt,
+                PointDetails.chargeId,
+            ).orderBy(
+                PointDetails.expireAt to SortOrder.ASC,
+                PointDetails.chargeId to SortOrder.ASC,
+            ).filter{
+                (it[pointSum] ?: 0) > 0
+            }.forEach {
+                yield(ChargedPoints(it[PointDetails.chargeId], it[pointSum]!!))
+            }
         }
 
     override suspend fun updateCharges(
