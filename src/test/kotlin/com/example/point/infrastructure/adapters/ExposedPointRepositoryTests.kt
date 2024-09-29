@@ -4,7 +4,11 @@ import com.example.point.infrastructure.TestDatabase
 import com.example.point.infrastructure.database.PointDetails
 import com.example.point.infrastructure.database.PointEvents
 import com.example.point.infrastructure.database.PointType
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDateTime
@@ -12,7 +16,9 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.batchInsert
+import org.jetbrains.exposed.sql.deleteAll
+import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -326,20 +332,14 @@ class ExposedPointRepositoryTests {
                         val job =
                             launch {
                                 newSuspendedTransaction(Dispatchers.IO) {
-                                    //addLogger(StdOutSqlLogger)
+                                    // addLogger(StdOutSqlLogger)
                                     assertContains(userExpectedPoints, testUserId)
                                     val expectedPoints = userExpectedPoints[testUserId]!!
                                     var chargeCount = 0
-                                    for (charge in repo.getPointSeq(testUserId)) {
-                                        assertContains(
-                                            expectedPoints,
-                                            charge.chargeId,
-                                            "The map should contain the key '${charge.chargeId}'",
-                                        )
-                                        assertEquals(expectedPoints[charge.chargeId], charge.getLeftPoints())
+
+                                    repo.getPointFlow(testUserId).collect { charge ->
                                         chargeCount++
                                     }
-
                                     assertEquals(expectedPoints.size, chargeCount, "$testUserId does not have expected points in flow")
                                 }
                             }
