@@ -30,7 +30,7 @@ import kotlin.test.assertTrue
 import kotlin.time.measureTime
 
 data class PointData(
-    val chargeId: Int,
+    val chargeId: Long,
     val numPoints: Int,
     val transactionAt: LocalDateTime,
     val expireAt: LocalDateTime,
@@ -46,17 +46,17 @@ class ExposedPointRepositoryTests {
     @Test
     fun fetchPoints() {
         val testUserId = 132
-        val charges: Map<Int, List<Int>> =
+        val charges: Map<Long, List<Int>> =
             mapOf(
-                12343 to listOf(100, -20, -70),
-                11222 to listOf(3, -1, -1),
-                9333 to listOf(1),
-                8343 to listOf(3, -3),
-                5222 to listOf(33, -16, -17),
+                12343L to listOf(100, -20, -70),
+                11222L to listOf(3, -1, -1),
+                9333L to listOf(1),
+                8343L to listOf(3, -3),
+                5222L to listOf(33, -16, -17),
             )
         val expireDays = 37
 
-        val chargePointSums: Map<Int, Int> =
+        val chargePointSums: Map<Long, Int> =
             charges.mapValues {
                 it.value.sum()
             }
@@ -65,12 +65,12 @@ class ExposedPointRepositoryTests {
         chargePointSums.forEach { assertTrue(it.value >= 0) }
         val expectedPoints = chargePointSums.filter { it.value > 0 }
 
-        val expiredCharges: Map<Int, List<Int>> =
+        val expiredCharges: Map<Long, List<Int>> =
             mapOf(
-                8 to listOf(1232, -203, -730),
-                7 to listOf(3, -1, -1),
-                5 to listOf(10, -10),
-                3 to listOf(300, -3),
+                8L to listOf(1232, -203, -730),
+                7L to listOf(3, -1, -1),
+                5L to listOf(10, -10),
+                3L to listOf(300, -3),
             )
 
         // expired and not expired charge data charge id should not intersect
@@ -141,6 +141,7 @@ class ExposedPointRepositoryTests {
                     it[userId] = testUserId
                     it[transactionCode] = "test1"
                     it[type] = PointType.CHARGE.value
+                    it[numPoints] = 100
                     it[title] = "test"
                     it[transactionAt] = Clock.System.now().toLocalDateTime(TimeZone.UTC)
                 }
@@ -186,14 +187,14 @@ class ExposedPointRepositoryTests {
     fun pointFlow() {
         val expireDays = 37
         val testUserIds = (333..358).toList()
-        val userExpectedPoints: MutableMap<Int, Map<Int, Int>> = mutableMapOf()
+        val userExpectedPoints: MutableMap<Int, Map<Long, Int>> = mutableMapOf()
         for (testUserId in testUserIds) {
-            val charges: Map<Int, List<Int>> =
-                (1..20).associate {
+            val charges: Map<Long, List<Int>> =
+                (1L..20L).associate {
                     it to (List(11) { -1 } + listOf(11 + (0..20).random()))
                 }
 
-            val chargePointSums: Map<Int, Int> =
+            val chargePointSums: Map<Long, Int> =
                 charges.mapValues {
                     it.value.sum()
                 }
@@ -202,12 +203,12 @@ class ExposedPointRepositoryTests {
             val expectedPoints = chargePointSums.filter { it.value > 0 }
             userExpectedPoints[testUserId] = expectedPoints
 
-            val expiredCharges: Map<Int, List<Int>> =
+            val expiredCharges: Map<Long, List<Int>> =
                 mapOf(
-                    3008 to listOf(1232 + (1..50).random(), -203, -730),
-                    3007 to listOf(3 + (1..50).random(), -1, -1),
-                    3005 to listOf(10 + (1..50).random(), -10),
-                    3003 to listOf(300 + (1..50).random(), -3),
+                    3008L to listOf(1232 + (1..50).random(), -203, -730),
+                    3007L to listOf(3 + (1..50).random(), -1, -1),
+                    3005L to listOf(10 + (1..50).random(), -10),
+                    3003L to listOf(300 + (1..50).random(), -3),
                 )
 
             assertTrue(charges.keys.intersect(expiredCharges.keys).isEmpty())
@@ -277,6 +278,7 @@ class ExposedPointRepositoryTests {
                         it[userId] = testUserId
                         it[transactionCode] = "test:$testUserId"
                         it[type] = PointType.CHARGE.value
+                        it[numPoints] = 100
                         it[title] = "test"
                         it[transactionAt] = Clock.System.now().toLocalDateTime(TimeZone.UTC)
                     }

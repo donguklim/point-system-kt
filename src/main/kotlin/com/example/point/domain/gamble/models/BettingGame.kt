@@ -8,6 +8,7 @@ import com.example.point.domain.valueObjects.Consumption
 class BettingGame(
     private val consumeProductCode: String = DomainConstants.DEFAULT_GAME_BET_PRODUCT_CODE,
     private val rewardProductCode: String = DomainConstants.DEFAULT_GAME_REWARD_PRODUCT_CODE,
+    private val rewardTitle: String = "",
     private val rewardDesc: String = "",
     private val costDesc: String = "",
     multiplierProbWeights: MutableMap<Int, Int>,
@@ -53,7 +54,8 @@ class BettingGame(
                     ),
                 productCode = rewardProductCode,
                 description = rewardDesc,
-                points = rewardPoints,
+                title = rewardTitle,
+                numPoints = rewardPoints,
             )
 
         return Pair(consuming, charging)

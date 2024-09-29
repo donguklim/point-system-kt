@@ -5,6 +5,7 @@ import com.example.point.domain.valueObjects.ChargedPoints
 import com.example.point.domain.valueObjects.ChargingPoints
 import com.example.point.domain.valueObjects.Consumption
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.LocalDateTime
 
 interface PointRepository {
     fun getPointSeq(userId: Int): Sequence<ChargedPoints> {
@@ -15,12 +16,14 @@ interface PointRepository {
 
     suspend fun updateCharges(
         userId: Int,
-        chargedPoint: List<ChargingPoints>,
+        chargingPoints: List<ChargingPoints>,
+        transactionAt: LocalDateTime? = null,
     )
 
     suspend fun updateConsumptions(
         userId: Int,
         consumption: List<Consumption>,
+        transactionAt: LocalDateTime? = null,
     )
 
     fun getUser(userId: Int): User {

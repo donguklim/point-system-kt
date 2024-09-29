@@ -1,7 +1,7 @@
 package com.example.point.domain
 
 object DomainConstants {
-    const val START_TIMESTAMP: Long = 1723302000 // 2024-08-11 in UTC
+    const val START_TIMESTAMP: Long = 1727600660 // 2024-08-11 in UTC
 
     // Not allowing the same point event within 1/TIME_RECORDING_SCALE second
     const val TIME_RECORDING_SCALE: Long = 10

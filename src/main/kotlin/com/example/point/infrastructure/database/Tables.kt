@@ -14,6 +14,7 @@ enum class PointType(val value: String) {
 object PointEvents : LongIdTable("point_events") {
     val userId = integer("user_id")
     val transactionCode = varchar("transaction_code", 63)
+    val numPoints = integer("num_points")
     val type = varchar("type", 15)
     val title = varchar("name", 127)
     val description = varchar("description", 255).default("")
@@ -42,7 +43,7 @@ object PointEvents : LongIdTable("point_events") {
 object PointDetails : LongIdTable("point_details") {
     val userId = integer("user_id")
     val type = varchar("type", 15)
-    val chargeId = integer("charge_id")
+    val chargeId = long("charge_id")
     val expireAt = datetime("expire_at")
     val eventId = reference("event_id", PointEvents.id, onDelete = ReferenceOption.CASCADE)
     val numPoints = integer("num_points")

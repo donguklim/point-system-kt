@@ -14,7 +14,7 @@ import kotlin.test.assertTrue
 
 fun getPointIterator(points: List<Int>) =
     sequence {
-        val chargeID = (1..10323).random()
+        val chargeID = (1L..10323L).random()
 
         for (point in points) {
             yield(ChargedPoints(chargeID, point))
