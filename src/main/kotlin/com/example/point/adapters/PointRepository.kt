@@ -16,13 +16,13 @@ interface PointRepository {
 
     suspend fun updateCharges(
         userId: Int,
-        newChargingPoints: List<ChargingPoints>,
+        chargingPointsList: List<ChargingPoints>,
         transactionAt: LocalDateTime? = null,
     )
 
     suspend fun updateConsumptions(
         userId: Int,
-        consumption: List<Consumption>,
+        consumptions: List<Consumption>,
         transactionAt: LocalDateTime? = null,
     )
 

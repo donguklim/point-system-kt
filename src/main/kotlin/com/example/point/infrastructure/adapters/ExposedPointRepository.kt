@@ -82,7 +82,7 @@ class ExposedPointRepository(
 
     override suspend fun updateCharges(
         userId: Int,
-        newCharingPoints: List<ChargingPoints>,
+        chargingPointsList: List<ChargingPoints>,
         transactionAt: LocalDateTime?,
     ) {
         val timeNow = Clock.System.now()
@@ -96,20 +96,20 @@ class ExposedPointRepository(
         val nonNullTransactionAt = transactionAt ?: transactionAtInstant.toLocalDateTime(TimeZone.UTC)
 
         val eventIds =
-            PointEvents.batchInsert(newCharingPoints) { point ->
+            PointEvents.batchInsert(chargingPointsList) { points ->
                 this[PointEvents.userId] = userId
-                this[PointEvents.transactionCode] = point.code
+                this[PointEvents.transactionCode] = points.code
                 this[PointEvents.type] = PointType.CHARGE.value
-                this[PointEvents.title] = point.title
-                this[PointEvents.description] = point.description
+                this[PointEvents.title] = points.title
+                this[PointEvents.description] = points.description
                 this[PointEvents.transactionAt] = nonNullTransactionAt
             }.map { it[PointEvents.id].value }
 
-        PointDetails.batchInsert(eventIds.zip(newCharingPoints)) { (eventId, point) ->
+        PointDetails.batchInsert(eventIds.zip(chargingPointsList)) { (eventId, points) ->
             this[PointDetails.eventId] = eventId
             this[PointDetails.userId] = userId
             this[PointDetails.type] = PointType.CHARGE.value
-            this[PointDetails.numPoints] = point.numPoints
+            this[PointDetails.numPoints] = points.numPoints
             // use event id as charge id
             this[PointDetails.chargeId] = eventId
             this[PointDetails.expireAt] = expireAt
@@ -118,8 +118,33 @@ class ExposedPointRepository(
 
     override suspend fun updateConsumptions(
         userId: Int,
-        consumption: List<Consumption>,
+        consumptions: List<Consumption>,
         transactionAt: LocalDateTime?,
     ) {
+        val nonNullTransactionAt = transactionAt ?: Clock.System.now().toLocalDateTime(TimeZone.UTC)
+        val eventIds =
+            PointEvents.batchInsert(consumptions) { consumption ->
+                this[PointEvents.userId] = userId
+                this[PointEvents.transactionCode] = consumption.code
+                this[PointEvents.type] = PointType.CONSUME.value
+                this[PointEvents.title] = consumption.title
+                this[PointEvents.description] = consumption.description
+                this[PointEvents.transactionAt] = nonNullTransactionAt
+            }.map { it[PointEvents.id].value }
+
+        val eventIdUsagePairs =
+            eventIds.zip(consumptions).map { (eventId, consumption) ->
+                consumption.collectUsedCharges().map { Pair(eventId, it) }
+            }.flatten()
+
+        PointDetails.batchInsert(eventIdUsagePairs) { (eventId, usage) ->
+            this[PointDetails.eventId] = eventId
+            this[PointDetails.userId] = userId
+            this[PointDetails.type] = PointType.CONSUME.value
+            this[PointDetails.numPoints] = usage.points
+            // use event id as charge id
+            this[PointDetails.chargeId] = usage.chargeId
+            this[PointDetails.expireAt] = usage.expireAt
+        }
     }
 }

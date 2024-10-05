@@ -10,6 +10,7 @@ class BettingGame(
     private val rewardProductCode: String = DomainConstants.DEFAULT_GAME_REWARD_PRODUCT_CODE,
     private val rewardTitle: String = "",
     private val rewardDesc: String = "",
+    private val costTitle: String = "",
     private val costDesc: String = "",
     multiplierProbWeights: MutableMap<Int, Int>,
 ) {
@@ -36,6 +37,7 @@ class BettingGame(
                     ),
                 productCode = consumeProductCode,
                 description = costDesc,
+                title = costTitle,
                 cost = points,
             )
 

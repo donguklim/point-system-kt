@@ -5,6 +5,7 @@ class Consumption(
     // unique code for each point event
     val cost: Int,
     val productCode: String,
+    val title: String,
     val description: String = "",
 ) {
     private var consumingPoints: Int = 0
