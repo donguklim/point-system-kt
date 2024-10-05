@@ -2,12 +2,12 @@ package com.example.point.adapters
 
 interface PointCache {
     suspend fun resetUserPoints(
-        userId: Int,
+        userId: Long,
         points: Int,
     )
 
     suspend fun incrementUserPoints(
-        userId: Int,
+        userId: Long,
         points: Int,
     )
 }

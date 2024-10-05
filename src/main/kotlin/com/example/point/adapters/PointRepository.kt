@@ -8,25 +8,25 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDateTime
 
 interface PointRepository {
-    fun getPointSeq(userId: Int): Sequence<ChargedPoints> {
+    fun getPointSeq(userId: Long): Sequence<ChargedPoints> {
         return sequence {}
     }
 
-    fun getPointFlow(userId: Int): Flow<ChargedPoints>
+    fun getPointFlow(userId: Long): Flow<ChargedPoints>
 
     suspend fun updateCharges(
-        userId: Int,
+        userId: Long,
         chargingPointsList: List<ChargingPoints>,
         transactionAt: LocalDateTime? = null,
     )
 
     suspend fun updateConsumptions(
-        userId: Int,
+        userId: Long,
         consumptions: List<Consumption>,
         transactionAt: LocalDateTime? = null,
     )
 
-    fun getUser(userId: Int): User {
+    fun getUser(userId: Long): User {
         return User(userId, getPointSeq(userId))
     }
 }

@@ -10,7 +10,7 @@ abstract class UserUnitOfWork(private val repository: PointRepository) {
 
     protected abstract fun endUnit()
 
-    fun begin(userId: Int) {
+    fun begin(userId: Long) {
         beginUnit()
         user = repository.getUser(userId)
     }
@@ -29,7 +29,7 @@ abstract class UserUnitOfWork(private val repository: PointRepository) {
     }
 
     suspend inline fun userAction(
-        userId: Int,
+        userId: Long,
         block: UserUnitOfWork.() -> Unit,
     ) {
         this.begin(userId)

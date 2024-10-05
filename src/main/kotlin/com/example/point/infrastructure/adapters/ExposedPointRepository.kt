@@ -1,6 +1,7 @@
 package com.example.point.infrastructure.adapters
 
 import com.example.point.adapters.PointRepository
+import com.example.point.domain.DomainConstants.POINT_EXPIRY_DAYS
 import com.example.point.domain.valueObjects.ChargedPoints
 import com.example.point.domain.valueObjects.ChargingPoints
 import com.example.point.domain.valueObjects.Consumption
@@ -27,10 +28,10 @@ import org.jetbrains.exposed.sql.sum
 import kotlin.sequences.Sequence
 
 class ExposedPointRepository(
-    private val expiryDays: Int,
+    private val expiryDays: Int = POINT_EXPIRY_DAYS,
     private val chunkSize: Int = 2000,
 ) : PointRepository {
-    override fun getPointFlow(userId: Int): Flow<ChargedPoints> =
+    override fun getPointFlow(userId: Long): Flow<ChargedPoints> =
         flow {
             var timeNow =
                 Clock.System.now().toLocalDateTime(TimeZone.UTC)
@@ -56,7 +57,7 @@ class ExposedPointRepository(
             }
         }.buffer(chunkSize)
 
-    override fun getPointSeq(userId: Int): Sequence<ChargedPoints> =
+    override fun getPointSeq(userId: Long): Sequence<ChargedPoints> =
         sequence {
             val pointSum = PointDetails.numPoints.sum().alias("point_sum")
             var timeNow = Clock.System.now().toLocalDateTime(TimeZone.UTC)
@@ -81,24 +82,36 @@ class ExposedPointRepository(
         }
 
     override suspend fun updateCharges(
-        userId: Int,
+        userId: Long,
         chargingPointsList: List<ChargingPoints>,
         transactionAt: LocalDateTime?,
     ) {
         val timeNow = Clock.System.now()
         val transactionAtInstant = (transactionAt?.toInstant(TimeZone.UTC)) ?: timeNow
+        // expiry time unit is hour
         val expireAt =
             transactionAtInstant.plus(
                 expiryDays,
                 DateTimeUnit.DAY,
                 TimeZone.UTC,
-            ).toLocalDateTime(TimeZone.UTC)
+            ).toLocalDateTime(TimeZone.UTC).let {
+                LocalDateTime(
+                    it.year,
+                    it.month,
+                    it.dayOfMonth,
+                    it.hour,
+                    0,
+                    0,
+                    0,
+                )
+            }
         val nonNullTransactionAt = transactionAt ?: transactionAtInstant.toLocalDateTime(TimeZone.UTC)
 
         val eventIds =
             PointEvents.batchInsert(chargingPointsList) { points ->
                 this[PointEvents.userId] = userId
                 this[PointEvents.transactionCode] = points.code
+                this[PointEvents.numPoints] = points.numPoints
                 this[PointEvents.type] = PointType.CHARGE.value
                 this[PointEvents.title] = points.title
                 this[PointEvents.description] = points.description
@@ -112,12 +125,13 @@ class ExposedPointRepository(
             this[PointDetails.numPoints] = points.numPoints
             // use event id as charge id
             this[PointDetails.chargeId] = eventId
+            this[PointDetails.transactionAt] = nonNullTransactionAt
             this[PointDetails.expireAt] = expireAt
         }
     }
 
     override suspend fun updateConsumptions(
-        userId: Int,
+        userId: Long,
         consumptions: List<Consumption>,
         transactionAt: LocalDateTime?,
     ) {
@@ -126,6 +140,7 @@ class ExposedPointRepository(
             PointEvents.batchInsert(consumptions) { consumption ->
                 this[PointEvents.userId] = userId
                 this[PointEvents.transactionCode] = consumption.code
+                this[PointEvents.numPoints] = consumption.cost
                 this[PointEvents.type] = PointType.CONSUME.value
                 this[PointEvents.title] = consumption.title
                 this[PointEvents.description] = consumption.description
@@ -141,9 +156,10 @@ class ExposedPointRepository(
             this[PointDetails.eventId] = eventId
             this[PointDetails.userId] = userId
             this[PointDetails.type] = PointType.CONSUME.value
-            this[PointDetails.numPoints] = usage.points
+            this[PointDetails.numPoints] = -usage.points
             // use event id as charge id
             this[PointDetails.chargeId] = usage.chargeId
+            this[PointDetails.transactionAt] = nonNullTransactionAt
             this[PointDetails.expireAt] = usage.expireAt
         }
     }

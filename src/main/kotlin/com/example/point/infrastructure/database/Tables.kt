@@ -12,7 +12,7 @@ enum class PointType(val value: String) {
 }
 
 object PointEvents : LongIdTable("point_events") {
-    val userId = integer("user_id")
+    val userId = long("user_id")
     val transactionCode = varchar("transaction_code", 63)
     val numPoints = integer("num_points")
     val type = varchar("type", 15)
@@ -41,7 +41,7 @@ object PointEvents : LongIdTable("point_events") {
 }
 
 object PointDetails : LongIdTable("point_details") {
-    val userId = integer("user_id")
+    val userId = long("user_id")
     val type = varchar("type", 15)
     val chargeId = long("charge_id")
     val expireAt = datetime("expire_at")

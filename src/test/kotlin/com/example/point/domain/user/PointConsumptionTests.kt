@@ -64,7 +64,7 @@ class PointConsumptionTests {
     ) {
         val user =
             User(
-                (3..23233).random(),
+                (3L..23233L).random(),
                 pointsIter = getPointIterator(pointsList),
             )
 
@@ -94,7 +94,7 @@ class PointConsumptionTests {
     ) {
         val user =
             User(
-                (3..23233).random(),
+                (3..23233L).random(),
                 pointsIter = getPointIterator(pointsList),
             )
 

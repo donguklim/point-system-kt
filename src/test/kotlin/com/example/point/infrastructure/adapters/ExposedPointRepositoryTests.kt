@@ -1,5 +1,6 @@
 package com.example.point.infrastructure.adapters
 
+import com.example.point.domain.valueObjects.ChargingPoints
 import com.example.point.infrastructure.TestDatabase
 import com.example.point.infrastructure.database.PointDetails
 import com.example.point.infrastructure.database.PointEvents
@@ -16,9 +17,11 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.deleteAll
 import org.jetbrains.exposed.sql.insertAndGetId
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -44,8 +47,8 @@ class ExposedPointRepositoryTests {
     }
 
     @Test
-    fun fetchPoints() {
-        val testUserId = 132
+    fun testFetchPoints() {
+        val testUserId = 132L
         val charges: Map<Long, List<Int>> =
             mapOf(
                 12343L to listOf(100, -20, -70),
@@ -186,10 +189,10 @@ class ExposedPointRepositoryTests {
     }
 
     @Test
-    fun pointFlow() {
+    fun testPointFlowAndPointSequencePerformance() {
         val expireDays = 37
-        val testUserIds = (333..358).toList()
-        val userExpectedPoints: MutableMap<Int, Map<Long, Int>> = mutableMapOf()
+        val testUserIds = (333L..358L).toList()
+        val userExpectedPoints: MutableMap<Long, Map<Long, Int>> = mutableMapOf()
         for (testUserId in testUserIds) {
             val charges: Map<Long, List<Int>> =
                 (1L..20L).associate {
@@ -354,6 +357,93 @@ class ExposedPointRepositoryTests {
                 }
             }
         println("Suspended transaction Elapsed time: $elapsed")
+
+        transaction {
+            PointDetails.deleteAll()
+            PointEvents.deleteAll()
+        }
+    }
+
+    @Test
+    fun testUpdateCharges() {
+        val expectedPointsMap =
+            (1..10).associate {
+                "$it:test" to
+                    ChargingPoints(
+                        code = "$it:test",
+                        numPoints = (1..500).random(),
+                        title = "$it-title",
+                        productCode = "some",
+                        description = "${(1..500).random()} some desc",
+                    )
+            }
+
+        val expiryDays = (30..500).random()
+        val repo = ExposedPointRepository(expiryDays = expiryDays)
+        val timeNow = Clock.System.now()
+        val transactionAt =
+            timeNow.toLocalDateTime(TimeZone.UTC).let {
+                LocalDateTime(
+                    it.year,
+                    it.month,
+                    it.dayOfMonth,
+                    it.hour,
+                    it.minute,
+                    it.second,
+                    // Mysql datetime only support up to 6 decimal points of second
+                    // so discard the last 3 digits of the nanosecond
+                    (it.nanosecond / 1000) * 1000,
+                )
+            }
+
+        val expectedExpireAt =
+            timeNow.plus(
+                expiryDays,
+                DateTimeUnit.DAY,
+                TimeZone.UTC,
+            ).toLocalDateTime(TimeZone.UTC).let {
+                LocalDateTime(
+                    it.year,
+                    it.month,
+                    it.dayOfMonth,
+                    it.hour,
+                    0,
+                    0,
+                    0,
+                )
+            }
+
+        val userId: Long = (1L..10000L).random()
+        runBlocking {
+            newSuspendedTransaction(Dispatchers.IO) {
+                repo.updateCharges(userId, expectedPointsMap.values.toList(), transactionAt)
+            }
+        }
+
+        val eventIdMap = mutableMapOf<Long, String>()
+        transaction {
+            PointEvents.selectAll().where(PointEvents.userId eq userId).forEach {
+                assertContains(expectedPointsMap, it[PointEvents.transactionCode])
+                val expectedPoints = expectedPointsMap[it[PointEvents.transactionCode]]!!
+
+                assertEquals(expectedPoints.title, it[PointEvents.title])
+                assertEquals(expectedPoints.description, it[PointEvents.description])
+                assertEquals(PointType.CHARGE.value, it[PointEvents.type])
+                assertEquals(transactionAt, it[PointEvents.transactionAt])
+                eventIdMap[it[PointEvents.id].value] = expectedPoints.code
+            }
+
+            PointDetails.selectAll().where(PointDetails.userId eq userId).forEach {
+                assertContains(eventIdMap, it[PointDetails.eventId].value)
+                val expectedPoints = expectedPointsMap[eventIdMap[it[PointDetails.eventId].value]!!]!!
+
+                assertEquals(expectedPoints.numPoints, it[PointDetails.numPoints])
+                assertEquals(PointType.CHARGE.value, it[PointDetails.type])
+                assertEquals(it[PointDetails.eventId].value, it[PointDetails.chargeId])
+                assertEquals(transactionAt, it[PointDetails.transactionAt])
+                assertEquals(expectedExpireAt, it[PointDetails.expireAt])
+            }
+        }
 
         transaction {
             PointDetails.deleteAll()

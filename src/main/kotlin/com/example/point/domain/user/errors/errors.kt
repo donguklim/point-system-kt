@@ -1,7 +1,7 @@
 package com.example.point.domain.user.errors
 
 class NotEnoughFetchedPointsError(
-    val userId: Int,
+    val userId: Long,
     val totalFetchedPoints: Int,
     val consumption_code: String,
     val cost: Int,

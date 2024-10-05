@@ -8,7 +8,7 @@ import com.example.point.domain.valueObjects.ChargingPoints
 import com.example.point.domain.valueObjects.Consumption
 
 class User(
-    val userId: Int,
+    val userId: Long,
     private var pointsIter: Sequence<ChargedPoints>,
 ) {
     private var consumptions: MutableList<Consumption> = mutableListOf()
