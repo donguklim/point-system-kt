@@ -140,7 +140,7 @@ class ExposedPointRepository(
             PointEvents.batchInsert(consumptions) { consumption ->
                 this[PointEvents.userId] = userId
                 this[PointEvents.transactionCode] = consumption.code
-                this[PointEvents.numPoints] = consumption.cost
+                this[PointEvents.numPoints] = -consumption.cost
                 this[PointEvents.type] = PointType.CONSUME.value
                 this[PointEvents.title] = consumption.title
                 this[PointEvents.description] = consumption.description

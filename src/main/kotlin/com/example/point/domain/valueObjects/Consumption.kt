@@ -18,8 +18,7 @@ class Consumption(
     fun consume(points: ChargedPoints): Int {
         if (consumingPoints == cost) return 0
 
-        val remaining = cost - consumingPoints
-        val usage = points.consume(remaining)
+        val usage = points.consume(getRemainingCoast())
         usage ?: return 0
         if (usage.points <= 0) return 0
 

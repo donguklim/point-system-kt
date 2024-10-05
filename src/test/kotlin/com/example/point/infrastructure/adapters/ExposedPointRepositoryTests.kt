@@ -1,6 +1,8 @@
 package com.example.point.infrastructure.adapters
 
+import com.example.point.domain.valueObjects.ChargedPoints
 import com.example.point.domain.valueObjects.ChargingPoints
+import com.example.point.domain.valueObjects.Consumption
 import com.example.point.infrastructure.TestDatabase
 import com.example.point.infrastructure.database.PointDetails
 import com.example.point.infrastructure.database.PointEvents
@@ -16,6 +18,7 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.batchInsert
@@ -426,6 +429,7 @@ class ExposedPointRepositoryTests {
                 assertContains(expectedPointsMap, it[PointEvents.transactionCode])
                 val expectedPoints = expectedPointsMap[it[PointEvents.transactionCode]]!!
 
+                assertEquals(expectedPoints.numPoints, it[PointEvents.numPoints])
                 assertEquals(expectedPoints.title, it[PointEvents.title])
                 assertEquals(expectedPoints.description, it[PointEvents.description])
                 assertEquals(PointType.CHARGE.value, it[PointEvents.type])
@@ -442,6 +446,117 @@ class ExposedPointRepositoryTests {
                 assertEquals(it[PointDetails.eventId].value, it[PointDetails.chargeId])
                 assertEquals(transactionAt, it[PointDetails.transactionAt])
                 assertEquals(expectedExpireAt, it[PointDetails.expireAt])
+            }
+        }
+
+        transaction {
+            PointDetails.deleteAll()
+            PointEvents.deleteAll()
+        }
+    }
+
+    @Test
+    fun testUpdateConsumptions() {
+        val timeNow = Clock.System.now()
+        val transactionAt =
+            timeNow.toLocalDateTime(TimeZone.UTC).let {
+                LocalDateTime(
+                    it.year,
+                    it.month,
+                    it.dayOfMonth,
+                    it.hour,
+                    it.minute,
+                    it.second,
+                    // Mysql datetime only support up to 6 decimal points of second
+                    // so discard the last 3 digits of the nanosecond
+                    (it.nanosecond / 1000) * 1000,
+                )
+            }
+        val expireAt =
+            transactionAt.toInstant(TimeZone.UTC).plus(
+                1,
+                DateTimeUnit.HOUR,
+            ).toLocalDateTime(TimeZone.UTC)
+
+        val expectedPointsMap =
+            (1..10).associate {
+                "$it:test:consume" to
+                    Consumption(
+                        code = "$it:test:consume",
+                        cost = (1..500).random(),
+                        title = "$it-title",
+                        productCode = "some",
+                        description = "${(1..500).random()} some desc",
+                    )
+            }
+
+        val totalPoints = expectedPointsMap.values.fold(0) { acc, consumption -> acc + consumption.cost }
+        val eachPoints = 100
+
+        val charges =
+            (1L..totalPoints / eachPoints + 1).map {
+                ChargedPoints(
+                    chargeId = it,
+                    expireAt =
+                        transactionAt.toInstant(TimeZone.UTC).plus(
+                            (1..15).random(),
+                            DateTimeUnit.HOUR,
+                        ).toLocalDateTime(TimeZone.UTC),
+                    eachPoints,
+                )
+            }
+
+        val chargeExpireAtMap: Map<Long, LocalDateTime> = charges.associate { it.chargeId to it.expireAt }
+        val chargeUsagesMap: Map<String, MutableMap<Long, Int>> = expectedPointsMap.mapValues { mutableMapOf() }
+        var chargeIndex = 0
+        expectedPointsMap.values.forEach { consumption ->
+            while (consumption.getRemainingCoast() > 0) {
+                val numPoints = consumption.consume(charges[chargeIndex])
+                chargeUsagesMap[consumption.code]!![charges[chargeIndex].chargeId] = numPoints
+                if (charges[chargeIndex].getLeftPoints() == 0) {
+                    chargeIndex++
+                }
+            }
+        }
+
+        val repo = ExposedPointRepository()
+
+        val userId: Long = (1L..10000L).random()
+        runBlocking {
+            newSuspendedTransaction(Dispatchers.IO) {
+                repo.updateConsumptions(userId, expectedPointsMap.values.toList(), transactionAt)
+            }
+        }
+
+        val eventIdMap = mutableMapOf<Long, String>()
+        transaction {
+            PointEvents.selectAll().where(PointEvents.userId eq userId).forEach {
+                assertContains(expectedPointsMap, it[PointEvents.transactionCode])
+                val expectedConsumption = expectedPointsMap[it[PointEvents.transactionCode]]!!
+
+                assertEquals(-expectedConsumption.cost, it[PointEvents.numPoints])
+
+                assertEquals(expectedConsumption.title, it[PointEvents.title])
+                assertEquals(expectedConsumption.description, it[PointEvents.description])
+                assertEquals(PointType.CONSUME.value, it[PointEvents.type])
+                assertEquals(transactionAt, it[PointEvents.transactionAt])
+                eventIdMap[it[PointEvents.id].value] = expectedConsumption.code
+            }
+
+            PointDetails.selectAll().where(PointDetails.userId eq userId).forEach {
+                assertContains(eventIdMap, it[PointDetails.eventId].value)
+                val expectedConsumption = expectedPointsMap[eventIdMap[it[PointDetails.eventId].value]!!]!!
+                val expectedChargeUsages = chargeUsagesMap[expectedConsumption.code]!!
+                assertContains(
+                    expectedChargeUsages,
+                    it[PointDetails.chargeId],
+                    "cost: ${expectedConsumption.cost}, usage: ${it[PointDetails.numPoints]}",
+                )
+
+                assertEquals(-expectedChargeUsages[it[PointDetails.chargeId]]!!, it[PointDetails.numPoints])
+                assertEquals(PointType.CONSUME.value, it[PointDetails.type])
+                assertEquals(transactionAt, it[PointDetails.transactionAt])
+                assertEquals(chargeExpireAtMap[it[PointDetails.chargeId]], it[PointDetails.expireAt])
             }
         }
 
