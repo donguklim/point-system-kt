@@ -82,7 +82,7 @@ class ExposedPointRepository(
 
     override suspend fun updateCharges(
         userId: Int,
-        charingPoints: List<ChargingPoints>,
+        newCharingPoints: List<ChargingPoints>,
         transactionAt: LocalDateTime?,
     ) {
         val timeNow = Clock.System.now()
@@ -96,7 +96,7 @@ class ExposedPointRepository(
         val nonNullTransactionAt = transactionAt ?: transactionAtInstant.toLocalDateTime(TimeZone.UTC)
 
         val eventIds =
-            PointEvents.batchInsert(charingPoints) { point ->
+            PointEvents.batchInsert(newCharingPoints) { point ->
                 this[PointEvents.userId] = userId
                 this[PointEvents.transactionCode] = point.code
                 this[PointEvents.type] = PointType.CHARGE.value
@@ -105,7 +105,7 @@ class ExposedPointRepository(
                 this[PointEvents.transactionAt] = nonNullTransactionAt
             }.map { it[PointEvents.id].value }
 
-        PointDetails.batchInsert(eventIds.zip(charingPoints)) { (eventId, point) ->
+        PointDetails.batchInsert(eventIds.zip(newCharingPoints)) { (eventId, point) ->
             this[PointDetails.eventId] = eventId
             this[PointDetails.userId] = userId
             this[PointDetails.type] = PointType.CHARGE.value
