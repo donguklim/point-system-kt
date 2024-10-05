@@ -3,9 +3,7 @@ package com.example.point.domain.user.models
 import com.example.point.domain.events.NotEnoughPointEvent
 import com.example.point.domain.events.UserEvent
 import com.example.point.domain.user.errors.NotEnoughFetchedPointsError
-import com.example.point.domain.valueObjects.ChargedPoints
 import com.example.point.domain.valueObjects.ChargingPoints
-import com.example.point.domain.valueObjects.Consumption
 
 class User(
     val userId: Long,

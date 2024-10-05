@@ -1,9 +1,9 @@
 package com.example.point.adapters
 
+import com.example.point.domain.user.models.ChargedPoints
+import com.example.point.domain.user.models.Consumption
 import com.example.point.domain.user.models.User
-import com.example.point.domain.valueObjects.ChargedPoints
 import com.example.point.domain.valueObjects.ChargingPoints
-import com.example.point.domain.valueObjects.Consumption
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDateTime
 

@@ -1,4 +1,4 @@
-package com.example.point.domain.valueObjects
+package com.example.point.domain.user.models
 
 class Consumption(
     val code: String,

@@ -2,9 +2,9 @@ package com.example.point.infrastructure.adapters
 
 import com.example.point.adapters.PointRepository
 import com.example.point.domain.DomainConstants.POINT_EXPIRY_DAYS
-import com.example.point.domain.valueObjects.ChargedPoints
+import com.example.point.domain.user.models.ChargedPoints
+import com.example.point.domain.user.models.Consumption
 import com.example.point.domain.valueObjects.ChargingPoints
-import com.example.point.domain.valueObjects.Consumption
 import com.example.point.infrastructure.database.PointDetails
 import com.example.point.infrastructure.database.PointEvents
 import com.example.point.infrastructure.database.PointType

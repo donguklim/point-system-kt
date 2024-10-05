@@ -2,8 +2,8 @@ package com.example.point.domain.gamble.models
 
 import com.example.point.domain.DomainConstants
 import com.example.point.domain.gamble.utils.RandomSelector
+import com.example.point.domain.user.models.Consumption
 import com.example.point.domain.valueObjects.ChargingPoints
-import com.example.point.domain.valueObjects.Consumption
 
 class BettingGame(
     private val consumeProductCode: String = DomainConstants.DEFAULT_GAME_BET_PRODUCT_CODE,

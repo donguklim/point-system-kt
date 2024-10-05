@@ -1,9 +1,9 @@
 package com.example.point.domain.user
 
 import com.example.point.domain.events.NotEnoughPointEvent
+import com.example.point.domain.user.models.ChargedPoints
+import com.example.point.domain.user.models.Consumption
 import com.example.point.domain.user.models.User
-import com.example.point.domain.valueObjects.ChargedPoints
-import com.example.point.domain.valueObjects.Consumption
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone

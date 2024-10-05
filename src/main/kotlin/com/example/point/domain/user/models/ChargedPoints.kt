@@ -1,4 +1,4 @@
-package com.example.point.domain.valueObjects
+package com.example.point.domain.user.models
 
 import kotlinx.datetime.LocalDateTime
 import kotlin.math.min
