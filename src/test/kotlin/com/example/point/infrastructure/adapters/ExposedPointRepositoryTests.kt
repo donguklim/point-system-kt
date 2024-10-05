@@ -78,41 +78,10 @@ class ExposedPointRepositoryTests {
 
         val expiredPointDataList =
             expiredCharges.map {
-                val numDays = (1..19).random()
+                val numHours = (1..19).random()
                 val expireAt =
                     Clock.System.now().minus(
-                        expireDays + numDays,
-                        DateTimeUnit.DAY,
-                        TimeZone.UTC,
-                    )
-                it.value.map { numPoints ->
-                    PointData(
-                        chargeId = it.key,
-                        numPoints = numPoints,
-                        expireAt =
-                            expireAt.toLocalDateTime(TimeZone.UTC).let {
-                                LocalDateTime(it.year, it.month, it.dayOfMonth, it.hour, 0, 0, 0)
-                            },
-                        transactionAt =
-                            expireAt.minus(
-                                (1..9).random(),
-                                DateTimeUnit.DAY,
-                                TimeZone.UTC,
-                            ).toLocalDateTime(TimeZone.UTC),
-                    )
-                }
-            }.flatten()
-
-        val validPointDataList =
-            charges.map {
-                val numDays = (0..5).random()
-                val expireAt =
-                    Clock.System.now().minus(
-                        expireDays - numDays,
-                        DateTimeUnit.DAY,
-                        TimeZone.UTC,
-                    ).plus(
-                        1,
+                        numHours,
                         DateTimeUnit.HOUR,
                         TimeZone.UTC,
                     )
@@ -126,7 +95,38 @@ class ExposedPointRepositoryTests {
                             },
                         transactionAt =
                             expireAt.minus(
-                                (1..9).random(),
+                                expireDays,
+                                DateTimeUnit.DAY,
+                                TimeZone.UTC,
+                            ).toLocalDateTime(TimeZone.UTC),
+                    )
+                }
+            }.flatten()
+
+        val validPointDataList =
+            charges.map {
+                val numHours = (0..50).random()
+                val expireAt =
+                    Clock.System.now().plus(
+                        numHours,
+                        DateTimeUnit.HOUR,
+                        TimeZone.UTC,
+                    ).plus(
+                        10,
+                        DateTimeUnit.MINUTE,
+                        TimeZone.UTC,
+                    )
+                it.value.map { numPoints ->
+                    PointData(
+                        chargeId = it.key,
+                        numPoints = numPoints,
+                        expireAt =
+                            expireAt.toLocalDateTime(TimeZone.UTC).let {
+                                LocalDateTime(it.year, it.month, it.dayOfMonth, it.hour, 0, 0, 0)
+                            },
+                        transactionAt =
+                            expireAt.minus(
+                                expireDays,
                                 DateTimeUnit.DAY,
                                 TimeZone.UTC,
                             ).toLocalDateTime(TimeZone.UTC),
@@ -168,7 +168,9 @@ class ExposedPointRepositoryTests {
                 assertContains(
                     expectedPoints,
                     charge.chargeId,
-                    "The map should contain the key '${charge.chargeId}'",
+                    "The map should contain the key '${charge.chargeId}', ${charge.expireAt}, ${Clock.System.now().toLocalDateTime(
+                        TimeZone.UTC,
+                    )}",
                 )
                 assertEquals(expectedPoints[charge.chargeId], charge.getLeftPoints())
                 chargeCount++
@@ -218,7 +220,7 @@ class ExposedPointRepositoryTests {
                     val numDays = (1..19).random()
                     val expireAt =
                         Clock.System.now().minus(
-                            expireDays + numDays,
+                            numDays,
                             DateTimeUnit.DAY,
                             TimeZone.UTC,
                         )
@@ -232,7 +234,7 @@ class ExposedPointRepositoryTests {
                                 },
                             transactionAt =
                                 expireAt.minus(
-                                    (1..9).random(),
+                                    expireDays,
                                     DateTimeUnit.DAY,
                                     TimeZone.UTC,
                                 ).toLocalDateTime(TimeZone.UTC),
@@ -244,8 +246,8 @@ class ExposedPointRepositoryTests {
                 charges.map {
                     val numDays = (0..5).random()
                     val expireAt =
-                        Clock.System.now().minus(
-                            expireDays - numDays,
+                        Clock.System.now().plus(
+                            numDays,
                             DateTimeUnit.DAY,
                             TimeZone.UTC,
                         ).plus(
@@ -263,7 +265,7 @@ class ExposedPointRepositoryTests {
                                 },
                             transactionAt =
                                 expireAt.minus(
-                                    (1..9).random(),
+                                    expireDays,
                                     DateTimeUnit.DAY,
                                     TimeZone.UTC,
                                 ).toLocalDateTime(TimeZone.UTC),

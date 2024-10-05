@@ -1,9 +1,11 @@
 package com.example.point.domain.valueObjects
 
+import kotlinx.datetime.LocalDateTime
 import kotlin.math.min
 
 class ChargedPoints(
     val chargeId: Long,
+    val expireAt: LocalDateTime,
     private val initPoint: Int,
 ) {
     private var usedPoints: Int = 0

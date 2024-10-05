@@ -4,6 +4,11 @@ import com.example.point.domain.events.NotEnoughPointEvent
 import com.example.point.domain.user.models.User
 import com.example.point.domain.valueObjects.ChargedPoints
 import com.example.point.domain.valueObjects.Consumption
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
@@ -17,7 +22,17 @@ fun getPointIterator(points: List<Int>) =
         val chargeID = (1L..10323L).random()
 
         for (point in points) {
-            yield(ChargedPoints(chargeID, point))
+            yield(
+                ChargedPoints(
+                    chargeID,
+                    Clock.System.now().plus(
+                        3,
+                        DateTimeUnit.HOUR,
+                        TimeZone.UTC,
+                    ).toLocalDateTime(TimeZone.UTC),
+                    point,
+                ),
+            )
         }
     }
 
