@@ -23,7 +23,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-spring-boot-starter:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-kotlin-datetime:$exposedVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
-    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("io.lettuce.core:lettuce-core:6.2.0")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")

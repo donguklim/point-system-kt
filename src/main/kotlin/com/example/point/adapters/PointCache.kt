@@ -10,4 +10,6 @@ interface PointCache {
         userId: Long,
         points: Int,
     )
+
+    suspend fun getUserPoint(userId: Long): Int
 }
