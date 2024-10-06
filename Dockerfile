@@ -12,5 +12,5 @@ COPY . .
 # Expose port 8080
 EXPOSE 8080
 
-# Run the jar file
-CMD ["java", "-jar", "./build/libs/point-0.0.1-SNAPSHOT.jar"]
+# this does not work because gradlew.bat is a windows file
+ENTRYPOINT ["./gradlew", "bootRun"]

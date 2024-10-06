@@ -16,7 +16,7 @@ java {
 }
 
 springBoot {
-    mainClass = "com.example.point.PointApplication"
+    mainClass = "com.example.point.PointApplicationKt"
 }
 
 repositories {
