@@ -32,4 +32,48 @@ class RedisPointCacheTests {
         connection.flushCommands()
         connection.close()
     }
+
+    @Test
+    fun testPointsIncrement() {
+        val userId = (1..300L).random()
+        val points = (1..3000).random()
+
+        val key = "totalPoints:$userId"
+        val connection = getConnection()
+        connection.sync().set(key, points.toString())
+
+        val increasingValue = (1..3000).random()
+
+        val cache = RedisPointCache("localhost", "4321")
+        runBlocking {
+            cache.incrementUserPoints(userId, increasingValue)
+        }
+        cache.close()
+
+        val value = connection.sync().get(key)?.toInt() ?: 0
+
+        assertEquals(points + increasingValue, value)
+        connection.flushCommands()
+        connection.close()
+    }
+
+    @Test
+    fun testGetPoints() {
+        val userId = (1..300L).random()
+        val points = (1..3000).random()
+
+        val key = "totalPoints:$userId"
+        val connection = getConnection()
+        connection.sync().set(key, points.toString())
+
+        val cache = RedisPointCache("localhost", "4321")
+        runBlocking {
+            val cachedPoints = cache.getUserPoint(userId)
+            assertEquals(points, cachedPoints)
+        }
+        cache.close()
+
+        connection.flushCommands()
+        connection.close()
+    }
 }
