@@ -8,11 +8,13 @@ import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.transactions.transaction
 
 fun main() {
+    val appProperties = AppProperties()
     Database.connect(
-        AppProperties.datasourceUrl,
+        appProperties.datasourceUrl,
         driver = "com.mysql.cj.jdbc.Driver",
-        user = AppProperties.datasourceUsername,
-        password = AppProperties.datasourcePassword)
+        user = appProperties.datasourceUsername,
+        password = appProperties.datasourcePassword,
+    )
 
     transaction {
         addLogger(StdOutSqlLogger)

@@ -19,11 +19,17 @@ repositories {
     mavenCentral()
 }
 val exposedVersion: String by project
+val kotlinxCoroutinesVersion: String by project
 dependencies {
     implementation("org.jetbrains.exposed:exposed-spring-boot-starter:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-kotlin-datetime:$exposedVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
-    implementation("io.lettuce.core:lettuce-core:6.2.0")
+
+    // for lettuce Redis
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:$kotlinxCoroutinesVersion")
+    implementation("io.lettuce:lettuce-core:6.4.0.RELEASE")
+
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")

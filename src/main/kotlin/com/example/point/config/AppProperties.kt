@@ -4,8 +4,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
 @Component
-object AppProperties {
-
+class AppProperties {
     @Value("\${spring.datasource.url}")
     lateinit var datasourceUrl: String
 
@@ -23,6 +22,4 @@ object AppProperties {
 
     @Value("\${redis.password}")
     lateinit var redisPassword: String
-
-
 }

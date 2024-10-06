@@ -4,22 +4,28 @@ import com.example.point.adapters.PointCache
 import com.example.point.config.AppProperties
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.RedisClient
+import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.api.coroutines
 import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
 
 @OptIn(ExperimentalLettuceCoroutinesApi::class)
-class RedisPointCache: PointCache {
+class RedisPointCache(host: String, password: String, port: Int = 6379) : PointCache {
     private val redisClient: RedisClient
+    private val connection: StatefulRedisConnection<String, String>
     private val commands: RedisCoroutinesCommands<String, String>
+
     init {
-        redisClient = RedisClient.create(
-            "redis://${AppProperties.redisPassword}@${AppProperties.redisHost}:${AppProperties.redisPort}"
-        )
-        commands = redisClient.connect().coroutines()
+        val appProperties = AppProperties()
+        redisClient =
+            RedisClient.create(
+                "redis://$password@$host:$port",
+            )
+        connection = redisClient.connect()
+        commands = connection.coroutines()
     }
 
     private fun getUserIdKey(userId: Long): String {
-        return "totalPoints:${userId}"
+        return "totalPoints:$userId"
     }
 
     override suspend fun resetUserPoints(
