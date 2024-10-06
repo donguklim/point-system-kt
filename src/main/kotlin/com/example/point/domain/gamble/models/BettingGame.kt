@@ -1,13 +1,13 @@
 package com.example.point.domain.gamble.models
 
-import com.example.point.domain.DomainConstants
+import com.example.point.domain.Constants
 import com.example.point.domain.gamble.utils.RandomSelector
 import com.example.point.domain.user.models.Consumption
 import com.example.point.domain.valueObjects.ChargingPoints
 
 class BettingGame(
-    private val consumeProductCode: String = DomainConstants.DEFAULT_GAME_BET_PRODUCT_CODE,
-    private val rewardProductCode: String = DomainConstants.DEFAULT_GAME_REWARD_PRODUCT_CODE,
+    private val consumeProductCode: String = Constants.DEFAULT_GAME_BET_PRODUCT_CODE,
+    private val rewardProductCode: String = Constants.DEFAULT_GAME_REWARD_PRODUCT_CODE,
     private val rewardTitle: String = "",
     private val rewardDesc: String = "",
     private val costTitle: String = "",
@@ -25,14 +25,14 @@ class BettingGame(
 
         val relativeTimestamp =
             System.currentTimeMillis() / (
-                1000 / DomainConstants.TIME_RECORDING_SCALE
-            ) - DomainConstants.SCALED_START_TIMESTAMP
+                1000 / Constants.TIME_RECORDING_SCALE
+            ) - Constants.SCALED_START_TIMESTAMP
 
         val consuming =
             Consumption(
                 code =
                     String.format(
-                        DomainConstants.GAMBLE_GAME_CONSUMPTION_CODE_FORMAT,
+                        Constants.GAMBLE_GAME_CONSUMPTION_CODE_FORMAT,
                         relativeTimestamp,
                     ),
                 productCode = consumeProductCode,
@@ -51,7 +51,7 @@ class BettingGame(
             ChargingPoints(
                 code =
                     String.format(
-                        DomainConstants.GAMBLE_GAME_REWARD_CODE_FORMAT,
+                        Constants.GAMBLE_GAME_REWARD_CODE_FORMAT,
                         relativeTimestamp,
                     ),
                 productCode = rewardProductCode,

@@ -1,6 +1,6 @@
 package com.example.point.domain.gamble
 
-import com.example.point.domain.DomainConstants
+import com.example.point.domain.Constants
 import com.example.point.domain.gamble.models.BettingGame
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -53,14 +53,14 @@ class PlayGambleTests {
         val hasZero = multiplierMap[0]?.let { it > 0 } ?: false
 
         val cosumeCodePrefix =
-            DomainConstants.GAMBLE_GAME_CONSUMPTION_CODE_FORMAT.substring(
+            Constants.GAMBLE_GAME_CONSUMPTION_CODE_FORMAT.substring(
                 0,
-                DomainConstants.GAMBLE_GAME_CONSUMPTION_CODE_FORMAT.lastIndex - 1,
+                Constants.GAMBLE_GAME_CONSUMPTION_CODE_FORMAT.lastIndex - 1,
             )
         val rewardCodePrefix =
-            DomainConstants.GAMBLE_GAME_REWARD_CODE_FORMAT.substring(
+            Constants.GAMBLE_GAME_REWARD_CODE_FORMAT.substring(
                 0,
-                DomainConstants.GAMBLE_GAME_REWARD_CODE_FORMAT.lastIndex - 1,
+                Constants.GAMBLE_GAME_REWARD_CODE_FORMAT.lastIndex - 1,
             )
 
         for (some in 0..30) {

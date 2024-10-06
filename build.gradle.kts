@@ -15,6 +15,10 @@ java {
     }
 }
 
+springBoot {
+    mainClass = "com.example.point.PointApplication"
+}
+
 repositories {
     mavenCentral()
 }
