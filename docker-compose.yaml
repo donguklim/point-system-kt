@@ -19,5 +19,15 @@ services:
     volumes:
       - db_data:/var/lib/mysql
 
+  test:
+    profiles: ["test"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    command: gradle test
+    env_file:
+      - .env
+
 volumes:
   db_data:

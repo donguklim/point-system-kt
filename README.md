@@ -7,3 +7,8 @@ A point system implementation using Kotlin
 docker-compose build
 docker-compose up
 ```
+
+## Running the test
+```shell
+docker-compose run --rm test
+```
