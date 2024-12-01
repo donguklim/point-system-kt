@@ -1,10 +1,17 @@
-FROM amazoncorretto:21-alpine-jdk
+FROM gradle:8.11.1-jdk23 as builder
+WORKDIR /home/gradle/src
 
-# Create a directory
-WORKDIR /app
+COPY --chown=gradle:gradle . /home/gradle/src
+USER root
+RUN chown -R gradle /home/gradle/src
 
-# Copy all the files from the current directory to the image
-COPY . .
+USER gradle
+RUN gradle clean build -x test
+
+FROM amazoncorretto:23-alpine-jdk
+CMD mkdir /app
+
+COPY --from=builder /home/gradle/src/build/libs/*.jar /app/
 
 # build the project avoiding tests
 # RUN ./gradlew clean build -x test
@@ -12,5 +19,5 @@ COPY . .
 # Expose port 8080
 EXPOSE 8080
 
-# this does not work because gradlew.bat is a windows file
-ENTRYPOINT ["./gradlew", "bootRun"]
+WORKDIR /app
+CMD ["java", "-jar", "point-0.0.1-SNAPSHOT.jar"]
