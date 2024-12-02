@@ -11,7 +11,7 @@ services:
       - db
 
   db:
-    image: mysql:9.0.1
+    image: mysql:9.1
     env_file:
       - .env
     ports:

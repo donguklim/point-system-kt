@@ -18,7 +18,7 @@ class RedisPointCache(host: String, password: String, port: Int = 6379) : PointC
         val appProperties = AppProperties()
         redisClient =
             RedisClient.create(
-                "redis://$password@$host:$port",
+                "redis://:$password@$host:$port",
             )
         connection = redisClient.connect()
         commands = connection.coroutines()

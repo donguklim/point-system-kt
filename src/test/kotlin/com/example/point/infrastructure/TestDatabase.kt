@@ -11,7 +11,7 @@ import org.testcontainers.containers.MySQLContainer
 
 object TestDatabase {
     private val mySQLContainer: MySQLContainer<Nothing> =
-        MySQLContainer<Nothing>("mysql:8.0.26").apply {
+        MySQLContainer<Nothing>("mysql:9.1").apply {
             withDatabaseName("test-db")
             withUsername("test-user")
             withPassword("test-password")
