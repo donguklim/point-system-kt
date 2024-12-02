@@ -1,5 +1,6 @@
 package com.example.point.infrastructure.adapters
 
+import io.github.cdimascio.dotenv.dotenv
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
 import kotlinx.coroutines.runBlocking
@@ -7,8 +8,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import kotlin.test.assertEquals
 
-
 import java.net.InetAddress
+
 
 fun getIpAddressByHostname(hostname: String): String {
     return try {
@@ -22,13 +23,17 @@ fun getIpAddressByHostname(hostname: String): String {
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class RedisPointCacheTests {
+    private val envs = dotenv{
+        filename = ".env.test"
+    }
+
     // private val redisHost = System.getenv("CACHE_REDIS_HOST")
 
     // Somehow lettuce cannot connect to the Redis container with the container name as the host name
     // So get the ip address of the host name and use it instead.
-    private val redisHost = getIpAddressByHostname(System.getenv("CACHE_REDIS_HOST"))
-    private val redisPort = System.getenv("REDIS_PORT").toInt()
-    private val redisPassword = System.getenv("REDIS_PASSWORD")
+    private val redisHost = getIpAddressByHostname(envs["CACHE_REDIS_HOST"])
+    private val redisPort = envs["REDIS_PORT"].toInt()
+    private val redisPassword = envs["REDIS_PASSWORD"]
 
     private fun getConnection(): StatefulRedisConnection<String, String> {
         return RedisClient.create(

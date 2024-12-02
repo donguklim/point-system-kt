@@ -4,14 +4,18 @@ import com.example.point.infrastructure.database.PointDetails
 import com.example.point.infrastructure.database.PointEvents
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import io.github.cdimascio.dotenv.dotenv
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object TestDatabase {
-    private val mysqlHost = System.getenv("MYSQL_URL")
-    private val mysqlUser = System.getenv("MYSQL_USER")
-    private val mysqlPassword = System.getenv("MYSQL_PASSWORD")
+    private val envs = dotenv{
+        filename = ".env.test"
+    }
+    private val mysqlHost =  envs["MYSQL_URL"]
+    private val mysqlUser =  envs["MYSQL_USER"]
+    private val mysqlPassword =  envs["MYSQL_PASSWORD"]
 
     init {
 

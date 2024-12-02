@@ -38,7 +38,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: builder
-    command: gradle test -i
+    command: gradle test
     env_file:
       - .env.docker.test
     depends_on:
