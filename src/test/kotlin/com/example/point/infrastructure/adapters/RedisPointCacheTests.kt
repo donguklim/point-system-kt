@@ -1,32 +1,43 @@
 package com.example.point.infrastructure.adapters
 
-import com.example.point.infrastructure.TestRedis
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import kotlin.test.assertEquals
 
 
+import java.net.InetAddress
+
+fun getIpAddressByHostname(hostname: String): String {
+    return try {
+        val address = InetAddress.getByName(hostname)
+        address.hostAddress
+    } catch (e: Exception) {
+        "Unable to resolve IP address for hostname: $hostname"
+    }
+}
+
+
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class RedisPointCacheTests {
-    @BeforeAll
-    fun setUp() {
-        TestRedis
-    }
+    // private val redisHost = System.getenv("CACHE_REDIS_HOST")
 
-    fun getConnection(): StatefulRedisConnection<String, String> {
-        println("redis://:${TestRedis.password}@${TestRedis.redisContainer.host}:${TestRedis.redisContainer.getMappedPort(TestRedis.port)}")
+    // Somehow lettuce cannot connect to the Redis container with the container name as the host name
+    // So get the ip address of the host name and use it instead.
+    private val redisHost = getIpAddressByHostname(System.getenv("CACHE_REDIS_HOST"))
+    private val redisPort = System.getenv("REDIS_PORT").toInt()
+    private val redisPassword = System.getenv("REDIS_PASSWORD")
+
+    private fun getConnection(): StatefulRedisConnection<String, String> {
         return RedisClient.create(
-            "redis://:${TestRedis.password}@${TestRedis.redisContainer.host}:${TestRedis.redisContainer.getMappedPort(TestRedis.port)}",
+            "redis://:$redisPassword@$redisHost:$redisPort",
         ).connect()
     }
 
-    fun getCache(): RedisPointCache {
-        return RedisPointCache(TestRedis.redisContainer.host, TestRedis.password, TestRedis.redisContainer.getMappedPort(TestRedis.port))
+    private fun getCache(): RedisPointCache {
+        return RedisPointCache(redisHost, redisPassword, redisPort)
     }
 
     @Test

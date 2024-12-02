@@ -7,23 +7,19 @@ import com.zaxxer.hikari.HikariDataSource
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.testcontainers.containers.MySQLContainer
 
 object TestDatabase {
-    private val mySQLContainer: MySQLContainer<Nothing> =
-        MySQLContainer<Nothing>("mysql:9.1").apply {
-            withDatabaseName("test-db")
-            withUsername("test-user")
-            withPassword("test-password")
-            start() // Start the container
-        }
+    private val mysqlHost = System.getenv("MYSQL_URL")
+    private val mysqlUser = System.getenv("MYSQL_USER")
+    private val mysqlPassword = System.getenv("MYSQL_PASSWORD")
 
     init {
+
         val config =
             HikariConfig().apply {
-                jdbcUrl = mySQLContainer.jdbcUrl
-                username = mySQLContainer.username
-                password = mySQLContainer.password
+                jdbcUrl = mysqlHost
+                username = mysqlUser
+                password = mysqlPassword
                 driverClassName = "com.mysql.cj.jdbc.Driver"
                 maximumPoolSize = 10
             }
@@ -38,5 +34,6 @@ object TestDatabase {
         transaction {
             SchemaUtils.create(PointEvents, PointDetails)
         }
+
     }
 }

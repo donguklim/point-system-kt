@@ -38,9 +38,31 @@ services:
       context: .
       dockerfile: Dockerfile
       target: builder
-    command: gradle test
+    command: gradle test -i
     env_file:
-      - .env
+      - .env.docker.test
+    depends_on:
+      - test_mysql_db
+      - test_redis_cache
+    links:
+      - test_mysql_db
+      - test_redis_cache
+
+  test_mysql_db:
+    profiles: ["test"]
+    image: mysql:9.1
+    env_file:
+      - .env.docker.test
+    ports:
+      - '3306:3306'
+
+  test_redis_cache:
+    profiles: ["test"]
+    image: redis:7.4.1-alpine
+    env_file:
+      - .env.docker.test
+    ports:
+      - '6379:6379'
 
 volumes:
   mysql_data:
