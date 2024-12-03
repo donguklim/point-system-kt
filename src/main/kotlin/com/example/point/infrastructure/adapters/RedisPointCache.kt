@@ -7,6 +7,8 @@ import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.api.coroutines
 import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
+import kotlinx.datetime.*
+
 
 @OptIn(ExperimentalLettuceCoroutinesApi::class)
 class RedisPointCache(host: String, password: String, port: Int = 6379) : PointCache {
@@ -25,7 +27,11 @@ class RedisPointCache(host: String, password: String, port: Int = 6379) : PointC
     }
 
     private fun getUserIdKey(userId: Long): String {
-        return "totalPoints:$userId"
+        return "${RedisKeys.USER_TOTAL_POINT_KEY_PREFIX}$userId"
+    }
+
+    private fun getUserValidExpireAtThresholdKey(userId: Long): String {
+        return "${RedisKeys.USER_EXPIRY_THRESHOLD_PREFIX}$userId"
     }
 
     override suspend fun resetUserPoints(
@@ -44,6 +50,20 @@ class RedisPointCache(host: String, password: String, port: Int = 6379) : PointC
 
     override suspend fun getUserPoint(userId: Long): Int {
         return commands.get(getUserIdKey(userId))?.toInt() ?: 0
+    }
+
+    override suspend fun getUserValidExpiryThreshold(userId: Long): LocalDateTime? {
+        commands.get(getUserValidExpireAtThresholdKey(userId))?.toLong()?.let{
+            return Instant.fromEpochSeconds(it).toLocalDateTime(TimeZone.UTC)
+        }
+        return null
+    }
+
+    override suspend fun setUserValidExpiryThreshold(userId: Long, expireAt: LocalDateTime) {
+        commands.set(
+            getUserValidExpireAtThresholdKey(userId),
+            expireAt.toInstant(TimeZone.UTC).epochSeconds.toString()
+        )
     }
 
     fun close() {

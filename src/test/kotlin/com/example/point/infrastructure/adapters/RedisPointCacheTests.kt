@@ -4,11 +4,13 @@ import io.github.cdimascio.dotenv.dotenv
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import kotlin.test.assertEquals
-
+import kotlin.test.assertNull
 import java.net.InetAddress
+
 
 
 fun getIpAddressByHostname(hostname: String): String {
@@ -58,7 +60,7 @@ class RedisPointCacheTests {
 
         val connection = getConnection()
 
-        val value = connection.sync().get("totalPoints:$userId")?.toInt() ?: 0
+        val value = connection.sync().get("${RedisKeys.USER_TOTAL_POINT_KEY_PREFIX}$userId")?.toInt() ?: 0
 
         assertEquals(points, value)
         connection.flushCommands()
@@ -70,7 +72,7 @@ class RedisPointCacheTests {
         val userId = (1..300L).random()
         val points = (1..3000).random()
 
-        val key = "totalPoints:$userId"
+        val key = "${RedisKeys.USER_TOTAL_POINT_KEY_PREFIX}$userId"
         val connection = getConnection()
         connection.sync().set(key, points.toString())
 
@@ -94,7 +96,7 @@ class RedisPointCacheTests {
         val userId = (1..300L).random()
         val points = (1..3000).random()
 
-        val key = "totalPoints:$userId"
+        val key = "${RedisKeys.USER_TOTAL_POINT_KEY_PREFIX}$userId"
         val connection = getConnection()
         connection.sync().set(key, points.toString())
 
@@ -104,6 +106,75 @@ class RedisPointCacheTests {
             assertEquals(points, cachedPoints)
         }
         cache.close()
+
+        connection.flushCommands()
+        connection.close()
+    }
+
+    @Test
+    fun testGetExpireAt() {
+        val userId = (1..300L).random()
+        val secondsElapsed = (1..3000).random()
+
+        val thresholdInstant = Clock.System.now().minus(
+            secondsElapsed,
+            DateTimeUnit.SECOND,
+            TimeZone.UTC,
+        )
+
+        val key = "${RedisKeys.USER_EXPIRY_THRESHOLD_PREFIX}$userId"
+        val connection = getConnection()
+        connection.sync().set(key, thresholdInstant.epochSeconds.toString())
+
+        val cache = getCache()
+        runBlocking {
+            val expiryThreshold = cache.getUserValidExpiryThreshold(userId)
+            assertEquals(thresholdInstant.epochSeconds, expiryThreshold!!.toInstant(TimeZone.UTC).epochSeconds)
+        }
+        cache.close()
+
+        connection.flushCommands()
+        connection.close()
+    }
+
+    @Test
+    fun testNullExpireAt() {
+        val userId = (1..300L).random()
+
+        val cache = getCache()
+        runBlocking {
+            val expiryThreshold = cache.getUserValidExpiryThreshold(userId)
+            assertNull(expiryThreshold)
+        }
+        cache.close()
+
+        val connection = getConnection()
+        connection.flushCommands()
+        connection.close()
+    }
+
+    @Test
+    fun testSetExpireAt() {
+        val userId = (1..300L).random()
+        val secondsElapsed = (1..3000).random()
+
+        val thresholdValue = Clock.System.now().minus(
+            secondsElapsed,
+            DateTimeUnit.SECOND,
+            TimeZone.UTC,
+        ).toLocalDateTime(TimeZone.UTC)
+
+        val cache = getCache()
+        runBlocking {
+            cache.setUserValidExpiryThreshold(userId, thresholdValue)
+        }
+        cache.close()
+
+        val key = "${RedisKeys.USER_EXPIRY_THRESHOLD_PREFIX}$userId"
+        val connection = getConnection()
+        val value = connection.sync().get(key)?.toLong()
+
+        assertEquals(thresholdValue.toInstant(TimeZone.UTC).epochSeconds, value)
 
         connection.flushCommands()
         connection.close()

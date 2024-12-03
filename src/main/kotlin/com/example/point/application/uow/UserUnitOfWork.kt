@@ -6,15 +6,9 @@ import com.example.point.domain.user.models.User
 abstract class UserUnitOfWork(private val repository: PointRepository) {
     var user: User? = null
 
-    protected abstract fun beginUnit()
-
-    protected abstract fun endUnit()
-
     fun begin(userId: Long) {
-        beginUnit()
         user = repository.getUser(userId)
     }
-
     suspend fun commit() {
         user?.let {
             repository.updateCharges(it.userId, it.collectChargingPoints().toList())
@@ -24,16 +18,19 @@ abstract class UserUnitOfWork(private val repository: PointRepository) {
 
     suspend fun end() {
         commit()
-        endUnit()
         user = null
     }
 
+    abstract suspend fun userUnit( unitLambda: suspend UserUnitOfWork.() -> Unit)
+
     suspend inline fun userAction(
         userId: Long,
-        block: UserUnitOfWork.() -> Unit,
+        crossinline lambda: UserUnitOfWork.() -> Unit,
     ) {
-        this.begin(userId)
-        this.block()
-        this.end()
+        userUnit {
+            this.begin(userId)
+            this.lambda()
+            this.end()
+        }
     }
 }
