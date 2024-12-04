@@ -1,14 +1,19 @@
 package com.example.point.application.uow
 
+import com.example.point.adapters.PointCache
 import com.example.point.adapters.PointRepository
 import com.example.point.domain.user.models.User
 
-abstract class UserUnitOfWork(private val repository: PointRepository) {
+abstract class UserUnitOfWork(
+    private val repository: PointRepository,
+    private val pointCache: PointCache
+) {
     var user: User? = null
 
-    fun begin(userId: Long) {
-        user = repository.getUser(userId)
+    suspend fun begin(userId: Long) {
+        user = repository.getUser(userId, pointCache.getUserValidExpiryThreshold(userId))
     }
+
     suspend fun commit() {
         user?.let {
             repository.updateCharges(it.userId, it.collectChargingPoints().toList())
@@ -25,7 +30,7 @@ abstract class UserUnitOfWork(private val repository: PointRepository) {
 
     suspend inline fun userAction(
         userId: Long,
-        crossinline lambda: UserUnitOfWork.() -> Unit,
+        crossinline lambda: suspend UserUnitOfWork.() -> Unit,
     ) {
         userUnit {
             this.begin(userId)

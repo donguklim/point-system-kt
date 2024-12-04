@@ -4,7 +4,6 @@ class Consumption(
     val code: String,
     // unique code for each point event
     val cost: Int,
-    val productCode: String,
     val title: String,
     val description: String = "",
 ) {

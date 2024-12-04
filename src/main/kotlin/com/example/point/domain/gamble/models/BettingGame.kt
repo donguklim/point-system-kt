@@ -6,13 +6,11 @@ import com.example.point.domain.user.models.Consumption
 import com.example.point.domain.valueObjects.ChargingPoints
 
 class BettingGame(
-    private val consumeProductCode: String = Constants.DEFAULT_GAME_BET_PRODUCT_CODE,
-    private val rewardProductCode: String = Constants.DEFAULT_GAME_REWARD_PRODUCT_CODE,
     private val rewardTitle: String = "",
     private val rewardDesc: String = "",
     private val costTitle: String = "",
     private val costDesc: String = "",
-    multiplierProbWeights: MutableMap<Int, Int>,
+    multiplierProbWeights: Map<Int, Int>,
 ) {
     private val selector: RandomSelector = RandomSelector(multiplierProbWeights)
 
@@ -35,7 +33,6 @@ class BettingGame(
                         Constants.GAMBLE_GAME_CONSUMPTION_CODE_FORMAT,
                         relativeTimestamp,
                     ),
-                productCode = consumeProductCode,
                 description = costDesc,
                 title = costTitle,
                 cost = points,
@@ -54,7 +51,6 @@ class BettingGame(
                         Constants.GAMBLE_GAME_REWARD_CODE_FORMAT,
                         relativeTimestamp,
                     ),
-                productCode = rewardProductCode,
                 description = rewardDesc,
                 title = rewardTitle,
                 numPoints = rewardPoints,

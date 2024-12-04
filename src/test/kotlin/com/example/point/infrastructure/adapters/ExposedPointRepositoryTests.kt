@@ -376,7 +376,7 @@ class ExposedPointRepositoryTests {
                         code = "$it:test",
                         numPoints = (1..500).random(),
                         title = "$it-title",
-                        productCode = "some",
+
                         description = "${(1..500).random()} some desc",
                     )
             }
@@ -485,7 +485,6 @@ class ExposedPointRepositoryTests {
                         code = "$it:test:consume",
                         cost = (1..500).random(),
                         title = "$it-title",
-                        productCode = "some",
                         description = "${(1..500).random()} some desc",
                     )
             }

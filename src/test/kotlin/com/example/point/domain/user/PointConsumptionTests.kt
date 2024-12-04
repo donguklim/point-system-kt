@@ -72,8 +72,7 @@ class PointConsumptionTests {
             Consumption(
                 code = "some_1232",
                 cost = pointsList.sum() + additionalPoints,
-                title = "some title",
-                productCode = "some_code",
+                title = "some title"
             )
         assertFalse(user.usePoints(consumingItem))
 
@@ -102,8 +101,7 @@ class PointConsumptionTests {
             Consumption(
                 code = "some_1232",
                 cost = cost,
-                title = "some title",
-                productCode = "some_code",
+                title = "some title"
             )
         assertTrue(user.usePoints(consumingItem))
 

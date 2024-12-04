@@ -4,7 +4,6 @@ class ChargingPoints(
     // unique code for each point event
     val code: String,
     val numPoints: Int,
-    val productCode: String,
     val title: String,
     val description: String,
 ) {

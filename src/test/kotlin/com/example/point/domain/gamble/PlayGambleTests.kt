@@ -11,17 +11,17 @@ import kotlin.test.assertTrue
 
 fun provideInvalidMultiplierWeightMap(): List<Arguments> {
     return listOf(
-        Arguments.of(mutableMapOf(-1 to 1, 1 to 1, 2 to 2)),
-        Arguments.of(mutableMapOf(-11 to 1, 2 to 2, 3 to 232)),
-        Arguments.of(mutableMapOf(0 to -3, -155 to 1, 2 to 2)),
+        Arguments.of(mapOf(-1 to 1, 1 to 1, 2 to 2)),
+        Arguments.of(mapOf(-11 to 1, 2 to 2, 3 to 232)),
+        Arguments.of(mapOf(0 to -3, -155 to 1, 2 to 2)),
     )
 }
 
 fun provideMultiplierWeightMap(): List<Arguments> {
     return listOf(
-        Arguments.of(mutableMapOf(0 to 1, 1 to 1, 2 to 1, 3 to 1)),
-        Arguments.of(mutableMapOf(1 to 1, 2 to 200, 3 to 50)),
-        Arguments.of(mutableMapOf(0 to 200, 1 to 10, 2 to 1)),
+        Arguments.of(mapOf(0 to 1, 1 to 1, 2 to 1, 3 to 1)),
+        Arguments.of(mapOf(1 to 1, 2 to 200, 3 to 50)),
+        Arguments.of(mapOf(0 to 200, 1 to 10, 2 to 1)),
         Arguments.of((0..1000).associateBy({ it }, { 1 })),
         Arguments.of((0..1000).associateBy({ it }, { 1000 - it })),
     )
@@ -30,7 +30,7 @@ fun provideMultiplierWeightMap(): List<Arguments> {
 class PlayGambleTests {
     @ParameterizedTest
     @MethodSource("com.example.point.domain.gamble.PlayGambleTestsKt#provideInvalidMultiplierWeightMap")
-    fun testInvalidGameInitialization(multiplerMap: MutableMap<Int, Int>) {
+    fun testInvalidGameInitialization(multiplerMap: Map<Int, Int>) {
         assertFailsWith<IllegalArgumentException>(
             block = {
                 BettingGame(multiplierProbWeights = multiplerMap)
@@ -41,14 +41,8 @@ class PlayGambleTests {
     @ParameterizedTest
     @MethodSource("com.example.point.domain.gamble.PlayGambleTestsKt#provideMultiplierWeightMap")
     fun testPlay(multiplierMap: MutableMap<Int, Int>) {
-        val consumeCode = "consume-some"
-        val rewardCode = "reward-some"
         val game =
-            BettingGame(
-                consumeProductCode = consumeCode,
-                rewardProductCode = rewardCode,
-                multiplierProbWeights = multiplierMap,
-            )
+            BettingGame(multiplierProbWeights = multiplierMap)
 
         val hasZero = multiplierMap[0]?.let { it > 0 } ?: false
 
@@ -68,14 +62,12 @@ class PlayGambleTests {
             val (consumption, reward) = game.play(some + 1)
 
             assertEquals(betPoint, consumption.cost)
-            assertEquals(consumeCode, consumption.productCode)
             assertTrue(
                 consumption.code.startsWith(cosumeCodePrefix),
             )
             reward ?: assertTrue(hasZero)
             reward ?: continue
 
-            assertEquals(rewardCode, reward.productCode)
             assertTrue(
                 reward.code.startsWith(rewardCodePrefix),
             )

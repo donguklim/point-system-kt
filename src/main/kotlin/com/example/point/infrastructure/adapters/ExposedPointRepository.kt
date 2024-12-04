@@ -31,11 +31,12 @@ class ExposedPointRepository(
     private val expiryDays: Int = POINT_EXPIRY_DAYS,
     private val chunkSize: Int = 2000,
 ) : PointRepository {
-    override fun getPointFlow(userId: Long): Flow<ChargedPoints> =
+    override fun getPointFlow(
+        userId: Long,
+        expireAtThreshold: LocalDateTime?
+    ): Flow<ChargedPoints> =
         flow {
-            var timeNow =
-                Clock.System.now().toLocalDateTime(TimeZone.UTC)
-
+            val threshold = expireAtThreshold ?: Clock.System.now().toLocalDateTime(TimeZone.UTC)
             val pointSum = PointDetails.numPoints.sum().alias("point_sum")
 
             PointDetails.select(
@@ -43,7 +44,7 @@ class ExposedPointRepository(
                 PointDetails.chargeId,
                 PointDetails.expireAt,
             ).where(
-                (PointDetails.userId eq userId) and (PointDetails.expireAt greater timeNow),
+                (PointDetails.userId eq userId) and (PointDetails.expireAt greater threshold),
             ).groupBy(
                 PointDetails.expireAt,
                 PointDetails.chargeId,
@@ -57,17 +58,20 @@ class ExposedPointRepository(
             }
         }.buffer(chunkSize)
 
-    override fun getPointSeq(userId: Long): Sequence<ChargedPoints> =
+    override fun getPointSeq(
+        userId: Long,
+        expireAtThreshold: LocalDateTime?
+    ): Sequence<ChargedPoints> =
         sequence {
             val pointSum = PointDetails.numPoints.sum().alias("point_sum")
-            var timeNow = Clock.System.now().toLocalDateTime(TimeZone.UTC)
+            val threshold = expireAtThreshold ?: Clock.System.now().toLocalDateTime(TimeZone.UTC)
 
             PointDetails.select(
                 pointSum,
                 PointDetails.chargeId,
                 PointDetails.expireAt,
             ).where(
-                (PointDetails.userId eq userId) and (PointDetails.expireAt greater timeNow),
+                (PointDetails.userId eq userId) and (PointDetails.expireAt greater threshold),
             ).groupBy(
                 PointDetails.expireAt,
                 PointDetails.chargeId,

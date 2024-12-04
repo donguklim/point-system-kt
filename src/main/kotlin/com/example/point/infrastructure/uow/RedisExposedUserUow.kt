@@ -9,8 +9,8 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 
 class RedisExposedUserUow(
     repository: ExposedPointRepository,
-    private val pointCache: RedisPointCache,
-) : UserUnitOfWork(repository) {
+    pointCache: RedisPointCache,
+) : UserUnitOfWork(repository, pointCache) {
 
     override suspend fun userUnit(unitLambda: suspend UserUnitOfWork.() -> Unit) {
         newSuspendedTransaction(Dispatchers.IO) {

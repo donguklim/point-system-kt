@@ -8,11 +8,17 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDateTime
 
 interface PointRepository {
-    fun getPointSeq(userId: Long): Sequence<ChargedPoints> {
+    fun getPointSeq(
+        userId: Long,
+        expireAtThreshold: LocalDateTime? = null
+    ): Sequence<ChargedPoints> {
         return sequence {}
     }
 
-    fun getPointFlow(userId: Long): Flow<ChargedPoints>
+    fun getPointFlow(
+        userId: Long,
+        expireAtThreshold: LocalDateTime? = null
+    ): Flow<ChargedPoints>
 
     suspend fun updateCharges(
         userId: Long,
@@ -26,7 +32,10 @@ interface PointRepository {
         transactionAt: LocalDateTime? = null,
     )
 
-    fun getUser(userId: Long): User {
-        return User(userId, getPointSeq(userId))
+    fun getUser(
+        userId: Long,
+        expireAtThreshold: LocalDateTime? = null
+    ): User {
+        return User(userId, getPointSeq(userId, expireAtThreshold))
     }
 }
