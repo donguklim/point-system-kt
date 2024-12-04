@@ -1,5 +1,6 @@
 package com.example.point.infrastructure.adapters
 
+import com.example.point.domain.user.errors.DuplicateCodeError
 import com.example.point.domain.user.models.ChargedPoints
 import com.example.point.domain.user.models.Consumption
 import com.example.point.domain.valueObjects.ChargingPoints
@@ -31,9 +32,16 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
+import org.junit.jupiter.params.provider.MethodSource
+import java.util.stream.Stream
 import kotlin.test.assertContains
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.time.measureTime
+
 
 data class PointData(
     val chargeId: Long,
@@ -41,6 +49,7 @@ data class PointData(
     val transactionAt: LocalDateTime,
     val expireAt: LocalDateTime,
 )
+
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ExposedPointRepositoryTests {
@@ -472,11 +481,6 @@ class ExposedPointRepositoryTests {
                     (it.nanosecond / 1000) * 1000,
                 )
             }
-        val expireAt =
-            transactionAt.toInstant(TimeZone.UTC).plus(
-                1,
-                DateTimeUnit.HOUR,
-            ).toLocalDateTime(TimeZone.UTC)
 
         val expectedPointsMap =
             (1..10).associate {
@@ -556,6 +560,154 @@ class ExposedPointRepositoryTests {
                 assertEquals(PointType.CONSUME.value, it[PointDetails.type])
                 assertEquals(transactionAt, it[PointDetails.transactionAt])
                 assertEquals(chargeExpireAtMap[it[PointDetails.chargeId]], it[PointDetails.expireAt])
+            }
+        }
+
+        transaction {
+            PointDetails.deleteAll()
+            PointEvents.deleteAll()
+        }
+    }
+
+    fun pointTypeArguments(): Stream<Arguments> {
+        return Stream.of(
+            Arguments.of(PointType.CONSUME),
+            Arguments.of(PointType.CHARGE),
+            Arguments.of(PointType.REFUND)
+        )
+    }
+
+    @ParameterizedTest
+    @MethodSource("pointTypeArguments")
+    fun testDuplicateCodeOnCharge(pointType: PointType) {
+        val userId: Long = (1L..10000L).random()
+        val duplicateTransactionCode = "test:${(1..10).random()}"
+
+        val transactionAtValue = Clock.System.now().minus(
+            322,
+            DateTimeUnit.HOUR,
+            TimeZone.UTC,
+        )
+
+        transaction {
+            // test point event
+            val testEventId =
+                PointEvents.insertAndGetId {
+                    it[PointEvents.userId] = userId
+                    it[transactionCode] = duplicateTransactionCode
+                    it[type] = pointType.value
+                    it[numPoints] = if (pointType != PointType.CONSUME) 100 else -100
+                    it[title] = "test"
+                    it[transactionAt] = transactionAtValue.toLocalDateTime(TimeZone.UTC)
+                }
+
+            PointDetails.insertAndGetId {
+                it[PointDetails.userId] = userId
+                it[PointDetails.eventId] = testEventId
+                it[PointDetails.type] = pointType.value
+                it[PointDetails.numPoints] = if (pointType != PointType.CONSUME) 100 else -100
+                it[PointDetails.chargeId] = testEventId.value
+                it[PointDetails.expireAt] = transactionAtValue.plus(
+                    100,
+                    DateTimeUnit.DAY,
+                    TimeZone.UTC,
+                ).toLocalDateTime(TimeZone.UTC)
+                it[PointDetails.transactionAt] = transactionAtValue.toLocalDateTime(TimeZone.UTC)
+            }
+        }
+
+        val chargeList = listOf(
+            ChargingPoints(
+                code=duplicateTransactionCode,
+                numPoints = 123,
+                title = "another point",
+                description = "something"
+            )
+        )
+
+        val repo = ExposedPointRepository()
+        runBlocking {
+            newSuspendedTransaction(Dispatchers.IO) {
+                val error = assertFailsWith <DuplicateCodeError> {
+                    repo.updateCharges(userId, chargeList)
+                }
+
+                assertEquals(error.pointType, PointType.CHARGE)
+            }
+        }
+
+        runBlocking {
+            newSuspendedTransaction(Dispatchers.IO) {
+                repo.updateCharges(userId + 1, chargeList)
+            }
+        }
+
+        transaction {
+            PointDetails.deleteAll()
+            PointEvents.deleteAll()
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("pointTypeArguments")
+    fun testDuplicateCodeOnConsume(pointType: PointType) {
+        val userId: Long = (1L..10000L).random()
+        val duplicateTransactionCode = "test:${(1..10).random()}"
+
+        val transactionAtValue = Clock.System.now().minus(
+            322,
+            DateTimeUnit.HOUR,
+            TimeZone.UTC,
+        )
+
+        transaction {
+            // test point event
+            val testEventId =
+                PointEvents.insertAndGetId {
+                    it[PointEvents.userId] = userId
+                    it[transactionCode] = duplicateTransactionCode
+                    it[type] = pointType.value
+                    it[numPoints] = if (pointType != PointType.CONSUME) 100 else -100
+                    it[title] = "test"
+                    it[transactionAt] = transactionAtValue.toLocalDateTime(TimeZone.UTC)
+                }
+        }
+
+        val consumption = Consumption(
+            code=duplicateTransactionCode,
+            cost = 232,
+            title = "another point",
+            description = "something"
+        )
+
+
+        val usingPoints = ChargedPoints(
+            chargeId =  (1L..10000L).random(),
+            expireAt = Clock.System.now().plus(
+                322,
+                DateTimeUnit.HOUR,
+                TimeZone.UTC,
+            ).toLocalDateTime(TimeZone.UTC),
+            initPoint = consumption.cost
+        )
+        consumption.consume(usingPoints)
+
+        val consumptionList = listOf(consumption)
+
+        val repo = ExposedPointRepository()
+        runBlocking {
+            newSuspendedTransaction(Dispatchers.IO) {
+                val error = assertFailsWith <DuplicateCodeError> {
+                    repo.updateConsumptions(userId, consumptionList)
+                }
+
+                assertEquals(error.pointType, PointType.CONSUME)
+            }
+        }
+
+        runBlocking {
+            newSuspendedTransaction(Dispatchers.IO) {
+                repo.updateConsumptions(userId + 1, consumptionList)
             }
         }
 

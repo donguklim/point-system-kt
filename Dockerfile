@@ -10,7 +10,7 @@ USER gradle
 RUN gradle clean build -x test
 
 FROM amazoncorretto:23-alpine-jdk
-CMD mkdir /app
+RUN mkdir /app
 
 COPY --from=builder /home/gradle/src/build/libs/*.jar /app/
 

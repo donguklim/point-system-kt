@@ -2,6 +2,7 @@ package com.example.point.infrastructure.adapters
 
 import com.example.point.adapters.PointRepository
 import com.example.point.domain.Constants.POINT_EXPIRY_DAYS
+import com.example.point.domain.user.errors.DuplicateCodeError
 import com.example.point.domain.user.models.ChargedPoints
 import com.example.point.domain.user.models.Consumption
 import com.example.point.domain.valueObjects.ChargingPoints
@@ -18,6 +19,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.greater
@@ -25,6 +27,7 @@ import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.sum
+import java.sql.SQLIntegrityConstraintViolationException
 import kotlin.sequences.Sequence
 
 class ExposedPointRepository(
@@ -110,8 +113,7 @@ class ExposedPointRepository(
                 )
             }
         val nonNullTransactionAt = transactionAt ?: transactionAtInstant.toLocalDateTime(TimeZone.UTC)
-
-        val eventIds =
+        val eventInsertResult = runCatching {
             PointEvents.batchInsert(chargingPointsList) { points ->
                 this[PointEvents.userId] = userId
                 this[PointEvents.transactionCode] = points.code
@@ -121,16 +123,30 @@ class ExposedPointRepository(
                 this[PointEvents.description] = points.description
                 this[PointEvents.transactionAt] = nonNullTransactionAt
             }.map { it[PointEvents.id].value }
+        }.onFailure {
+            when (val original = (it as? ExposedSQLException)?.cause?.cause) {
+                is SQLIntegrityConstraintViolationException ->{
+                    val errorMessage = original.message?.lowercase()
+                    if (errorMessage?.contains("duplicate entry") == true
+                        && errorMessage.contains("transaction_code")) {
 
-        PointDetails.batchInsert(eventIds.zip(chargingPointsList)) { (eventId, points) ->
-            this[PointDetails.eventId] = eventId
-            this[PointDetails.userId] = userId
-            this[PointDetails.type] = PointType.CHARGE.value
-            this[PointDetails.numPoints] = points.numPoints
-            // use event id as charge id
-            this[PointDetails.chargeId] = eventId
-            this[PointDetails.transactionAt] = nonNullTransactionAt
-            this[PointDetails.expireAt] = expireAt
+                        throw DuplicateCodeError(userId, PointType.CHARGE, errorMessage)
+                    }
+                }
+            }
+
+            throw it
+        }.onSuccess {
+            PointDetails.batchInsert(it.zip(chargingPointsList)) { (eventId, points) ->
+                this[PointDetails.eventId] = eventId
+                this[PointDetails.userId] = userId
+                this[PointDetails.type] = PointType.CHARGE.value
+                this[PointDetails.numPoints] = points.numPoints
+                // use event id as charge id
+                this[PointDetails.chargeId] = eventId
+                this[PointDetails.transactionAt] = nonNullTransactionAt
+                this[PointDetails.expireAt] = expireAt
+            }
         }
     }
 
@@ -140,7 +156,8 @@ class ExposedPointRepository(
         transactionAt: LocalDateTime?,
     ) {
         val nonNullTransactionAt = transactionAt ?: Clock.System.now().toLocalDateTime(TimeZone.UTC)
-        val eventIds =
+
+        val eventInsertResult = runCatching {
             PointEvents.batchInsert(consumptions) { consumption ->
                 this[PointEvents.userId] = userId
                 this[PointEvents.transactionCode] = consumption.code
@@ -150,21 +167,33 @@ class ExposedPointRepository(
                 this[PointEvents.description] = consumption.description
                 this[PointEvents.transactionAt] = nonNullTransactionAt
             }.map { it[PointEvents.id].value }
+        }.onFailure {
+            when (val original = (it as? ExposedSQLException)?.cause?.cause) {
+                is SQLIntegrityConstraintViolationException ->{
+                    val errorMessage = original.message?.lowercase()
+                    if (errorMessage?.contains("duplicate entry") == true
+                        && errorMessage.contains("transaction_code")) {
 
-        val eventIdUsagePairs =
-            eventIds.zip(consumptions).map { (eventId, consumption) ->
-                consumption.collectUsedCharges().map { Pair(eventId, it) }
-            }.flatten()
+                        throw DuplicateCodeError(userId, PointType.CONSUME, errorMessage)
+                    }
+                }
+            }
+        }.onSuccess {
+            val eventIdUsagePairs =
+                it.zip(consumptions).map { (eventId, consumption) ->
+                    consumption.collectUsedCharges().map { Pair(eventId, it) }
+                }.flatten()
 
-        PointDetails.batchInsert(eventIdUsagePairs) { (eventId, usage) ->
-            this[PointDetails.eventId] = eventId
-            this[PointDetails.userId] = userId
-            this[PointDetails.type] = PointType.CONSUME.value
-            this[PointDetails.numPoints] = -usage.points
-            // use event id as charge id
-            this[PointDetails.chargeId] = usage.chargeId
-            this[PointDetails.transactionAt] = nonNullTransactionAt
-            this[PointDetails.expireAt] = usage.expireAt
+            PointDetails.batchInsert(eventIdUsagePairs) { (eventId, usage) ->
+                this[PointDetails.eventId] = eventId
+                this[PointDetails.userId] = userId
+                this[PointDetails.type] = PointType.CONSUME.value
+                this[PointDetails.numPoints] = -usage.points
+                // use event id as charge id
+                this[PointDetails.chargeId] = usage.chargeId
+                this[PointDetails.transactionAt] = nonNullTransactionAt
+                this[PointDetails.expireAt] = usage.expireAt
+            }
         }
     }
 }
