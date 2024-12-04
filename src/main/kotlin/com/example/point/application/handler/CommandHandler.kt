@@ -13,8 +13,7 @@ import kotlinx.datetime.toLocalDateTime
 class CommandHandler {
     suspend fun getDailyCharge(userId: Long, uow: UserUnitOfWork) {
         val time_now = Clock.System.now().toLocalDateTime(TimeZone.UTC)
-        uow.userAction(userId){
-            val pointUser = user!!
+        uow.userAction(userId){ pointUser ->
             pointUser.chargePoints(
                 ChargingPoints(
                     code = "daily:${time_now.year}-${time_now.month}-${time_now.dayOfMonth}",
@@ -31,16 +30,20 @@ class CommandHandler {
         userId: Long,
         uow: UserUnitOfWork,
         gameFetcher: GambleGameFetcher
-    ) {
-        uow.userAction(userId){
+    ): Boolean {
+        var ret = false
+        uow.userAction(userId){ pointUser ->
             val bettingGame = gameFetcher.fetchBettingGame()
             val (consumption, bonus) = bettingGame.play(betPoint)
-            val pointUser = user!!
-            pointUser.usePoints(consumption)
-            bonus?.let {
-                pointUser.chargePoints(it)
+            if (pointUser.usePoints(consumption)) {
+                bonus?.let {
+                    pointUser.chargePoints(it)
+                }
+                ret = true
             }
         }
+
+        return ret
     }
 
     suspend fun buyProduct(
@@ -48,15 +51,17 @@ class CommandHandler {
         userId: Long,
         uow: UserUnitOfWork,
         productRepository: ProductRepository
-    ) {
-        uow.userAction(userId){
+    ) : Boolean{
+        var ret = false
+        uow.userAction(userId){ pointUser ->
             val consumption = productRepository.getConsumptionByProductCode(productCode)
-            val pointUser = user!!
             consumption?.let {
-                pointUser.usePoints(
+                ret = pointUser.usePoints(
                     consumption
                 )
             }
         }
+
+        return ret
     }
 }

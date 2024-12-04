@@ -10,8 +10,10 @@ abstract class UserUnitOfWork(
 ) {
     var user: User? = null
 
-    suspend fun begin(userId: Long) {
-        user = repository.getUser(userId, pointCache.getUserValidExpiryThreshold(userId))
+    suspend fun begin(userId: Long) : User {
+        val pointUser =  repository.getUser(userId, pointCache.getUserValidExpiryThreshold(userId))
+        user = pointUser
+        return pointUser
     }
 
     suspend fun commit() {
@@ -30,11 +32,11 @@ abstract class UserUnitOfWork(
 
     suspend inline fun userAction(
         userId: Long,
-        crossinline lambda: suspend UserUnitOfWork.() -> Unit,
+        crossinline lambda: suspend UserUnitOfWork.(User) -> Unit,
     ) {
         userUnit {
-            this.begin(userId)
-            this.lambda()
+            val pointUser = this.begin(userId)
+            this.lambda(pointUser)
             this.end()
         }
     }
