@@ -35,16 +35,15 @@ class RedisPointCacheTests {
     // So get the ip address of the host name and use it instead.
     private val redisHost = getIpAddressByHostname(envs["CACHE_REDIS_HOST"])
     private val redisPort = envs["REDIS_PORT"].toInt()
-    private val redisPassword = envs["REDIS_PASSWORD"]
 
     private fun getConnection(): StatefulRedisConnection<String, String> {
         return RedisClient.create(
-            "redis://:$redisPassword@$redisHost:$redisPort",
+            "redis://$redisHost:$redisPort",
         ).connect()
     }
 
     private fun getCache(): RedisPointCache {
-        return RedisPointCache(redisHost, redisPassword, redisPort)
+        return RedisPointCache(redisHost, redisPort)
     }
 
     @Test

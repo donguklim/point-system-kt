@@ -11,7 +11,7 @@ import kotlinx.datetime.*
 
 
 @OptIn(ExperimentalLettuceCoroutinesApi::class)
-class RedisPointCache(host: String, password: String, port: Int = 6379) : PointCache {
+class RedisPointCache(host: String, port: Int = 6379) : PointCache {
     private val redisClient: RedisClient
     private val connection: StatefulRedisConnection<String, String>
     private val commands: RedisCoroutinesCommands<String, String>
@@ -20,7 +20,7 @@ class RedisPointCache(host: String, password: String, port: Int = 6379) : PointC
         val appProperties = AppProperties()
         redisClient =
             RedisClient.create(
-                "redis://:$password@$host:$port",
+                "redis://$host:$port",
             )
         connection = redisClient.connect()
         commands = connection.coroutines()

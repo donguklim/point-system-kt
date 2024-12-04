@@ -30,6 +30,7 @@ class User(
         if (fetchedTotalPoints < cost) {
             events.add(
                 NotEnoughPointEvent(
+                    userId = userId,
                     cost = cost,
                     totalPoints = fetchedTotalPoints,
                 ),

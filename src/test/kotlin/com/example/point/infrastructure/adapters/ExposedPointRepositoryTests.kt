@@ -8,6 +8,7 @@ import com.example.point.infrastructure.TestDatabase
 import com.example.point.infrastructure.database.PointDetails
 import com.example.point.infrastructure.database.PointEvents
 import com.example.point.infrastructure.database.PointType
+import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.joinAll
@@ -53,6 +54,16 @@ data class PointData(
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ExposedPointRepositoryTests {
+    private val redisAddress: String
+
+    init {
+        val envs = dotenv{
+            filename = ".env.test"
+        }
+
+        redisAddress = "redis://${envs["CACHE_REDIS_HOST"]}:${envs["REDIS_PORT"]}"
+    }
+
     @BeforeAll
     fun setUp() {
         TestDatabase
@@ -174,6 +185,7 @@ class ExposedPointRepositoryTests {
 
         val repo =
             ExposedPointRepository(
+                redisAddress,
                 expireDays,
             )
 
@@ -314,6 +326,7 @@ class ExposedPointRepositoryTests {
 
         val repo =
             ExposedPointRepository(
+                redisAddress,
                 expireDays,
                 chunkSize = 2,
             )
@@ -391,7 +404,10 @@ class ExposedPointRepositoryTests {
             }
 
         val expiryDays = (30..500).random()
-        val repo = ExposedPointRepository(expiryDays = expiryDays)
+        val repo = ExposedPointRepository(
+            redisAddress = redisAddress,
+            expiryDays = expiryDays
+        )
         val timeNow = Clock.System.now()
         val transactionAt =
             timeNow.toLocalDateTime(TimeZone.UTC).let {
@@ -522,7 +538,7 @@ class ExposedPointRepositoryTests {
             }
         }
 
-        val repo = ExposedPointRepository()
+        val repo = ExposedPointRepository(redisAddress)
 
         val userId: Long = (1L..10000L).random()
         runBlocking {
@@ -625,7 +641,7 @@ class ExposedPointRepositoryTests {
             )
         )
 
-        val repo = ExposedPointRepository()
+        val repo = ExposedPointRepository(redisAddress)
         runBlocking {
             newSuspendedTransaction(Dispatchers.IO) {
                 val error = assertFailsWith <DuplicateCodeError> {
@@ -694,7 +710,7 @@ class ExposedPointRepositoryTests {
 
         val consumptionList = listOf(consumption)
 
-        val repo = ExposedPointRepository()
+        val repo = ExposedPointRepository(redisAddress)
         runBlocking {
             newSuspendedTransaction(Dispatchers.IO) {
                 val error = assertFailsWith <DuplicateCodeError> {

@@ -34,6 +34,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:$kotlinxCoroutinesVersion")
     implementation("io.lettuce:lettuce-core:6.4.0.RELEASE")
 
+    // Redisson for locking
+    implementation("org.redisson:redisson:3.39.0")
+
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
