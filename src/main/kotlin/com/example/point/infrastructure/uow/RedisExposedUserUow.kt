@@ -11,7 +11,6 @@ class RedisExposedUserUow(
     repository: ExposedPointRepository,
     pointCache: RedisPointCache,
 ) : UserUnitOfWork(repository, pointCache) {
-
     override suspend fun userUnit(unitLambda: suspend UserUnitOfWork.() -> Unit) {
         newSuspendedTransaction(Dispatchers.IO) {
             unitLambda()

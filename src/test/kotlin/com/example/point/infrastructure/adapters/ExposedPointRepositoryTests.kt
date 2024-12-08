@@ -54,16 +54,6 @@ data class PointData(
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ExposedPointRepositoryTests {
-    private val redisAddress: String
-
-    init {
-        val envs = dotenv{
-            filename = ".env.test"
-        }
-
-        redisAddress = "redis://${envs["CACHE_REDIS_HOST"]}:${envs["REDIS_PORT"]}"
-    }
-
     @BeforeAll
     fun setUp() {
         TestDatabase
@@ -185,7 +175,6 @@ class ExposedPointRepositoryTests {
 
         val repo =
             ExposedPointRepository(
-                redisAddress,
                 expireDays,
             )
 
@@ -326,7 +315,6 @@ class ExposedPointRepositoryTests {
 
         val repo =
             ExposedPointRepository(
-                redisAddress,
                 expireDays,
                 chunkSize = 2,
             )
@@ -405,7 +393,6 @@ class ExposedPointRepositoryTests {
 
         val expiryDays = (30..500).random()
         val repo = ExposedPointRepository(
-            redisAddress = redisAddress,
             expiryDays = expiryDays
         )
         val timeNow = Clock.System.now()
@@ -538,7 +525,7 @@ class ExposedPointRepositoryTests {
             }
         }
 
-        val repo = ExposedPointRepository(redisAddress)
+        val repo = ExposedPointRepository()
 
         val userId: Long = (1L..10000L).random()
         runBlocking {
@@ -641,7 +628,7 @@ class ExposedPointRepositoryTests {
             )
         )
 
-        val repo = ExposedPointRepository(redisAddress)
+        val repo = ExposedPointRepository()
         runBlocking {
             newSuspendedTransaction(Dispatchers.IO) {
                 val error = assertFailsWith <DuplicateCodeError> {
@@ -710,7 +697,7 @@ class ExposedPointRepositoryTests {
 
         val consumptionList = listOf(consumption)
 
-        val repo = ExposedPointRepository(redisAddress)
+        val repo = ExposedPointRepository()
         runBlocking {
             newSuspendedTransaction(Dispatchers.IO) {
                 val error = assertFailsWith <DuplicateCodeError> {

@@ -1,7 +1,6 @@
 package com.example.point.infrastructure.adapters
 
 import com.example.point.adapters.PointCache
-import com.example.point.config.AppProperties
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
@@ -17,7 +16,6 @@ class RedisPointCache(host: String, port: Int = 6379) : PointCache {
     private val commands: RedisCoroutinesCommands<String, String>
 
     init {
-        val appProperties = AppProperties()
         redisClient =
             RedisClient.create(
                 "redis://$host:$port",
@@ -32,6 +30,10 @@ class RedisPointCache(host: String, port: Int = 6379) : PointCache {
 
     private fun getUserValidExpireAtThresholdKey(userId: Long): String {
         return "${RedisKeys.USER_EXPIRY_THRESHOLD_PREFIX}$userId"
+    }
+
+    fun close() {
+        redisClient.shutdown()
     }
 
     override suspend fun resetUserPoints(
@@ -64,9 +66,5 @@ class RedisPointCache(host: String, port: Int = 6379) : PointCache {
             getUserValidExpireAtThresholdKey(userId),
             expireAt.toInstant(TimeZone.UTC).epochSeconds.toString()
         )
-    }
-
-    fun close() {
-        redisClient.shutdown()
     }
 }

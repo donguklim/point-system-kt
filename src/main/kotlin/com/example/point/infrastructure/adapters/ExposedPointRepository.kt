@@ -27,27 +27,13 @@ import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.sum
-import org.redisson.Redisson.create as redissonCreate
-import org.redisson.config.Config as RedissonConfig
-import org.redisson.api.RedissonClient
 import java.sql.SQLIntegrityConstraintViolationException
 import kotlin.sequences.Sequence
 
 class ExposedPointRepository(
-    redisAddress : String,
     private val expiryDays: Int = POINT_EXPIRY_DAYS,
     private val chunkSize: Int = 2000,
 ) : PointRepository {
-    val redisClient: RedissonClient
-    init {
-        val config = RedissonConfig().apply {
-            useSingleServer().apply {
-                address = redisAddress
-            }
-        }
-        redisClient = redissonCreate(config)
-    }
-
     override fun getPointFlow(
         userId: Long,
         expireAtThreshold: LocalDateTime?
