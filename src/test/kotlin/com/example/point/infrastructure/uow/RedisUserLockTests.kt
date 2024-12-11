@@ -8,6 +8,7 @@ import io.lettuce.core.api.StatefulRedisConnection
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import java.util.concurrent.atomic.AtomicInteger
 
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -69,38 +70,26 @@ class RedisUserLockTests {
         val userId = (1..300L).random()
 
         val manager = getManager()
-
+        val numCoroutines = 100
         var counter = 0
+        val lockResults = MutableList(numCoroutines) { false }
         runBlocking {
-            val jobs = List(100) { index ->
-                launch(Dispatchers.IO) {
-                    manager.tryLock(userId, index.toLong(), 10000, 100000)
-                    counter = counter + 1
-                }
-            }
-            jobs.forEach { it.join() }
-        }
 
-        val stopBefore = (10..77).random()
-        runBlocking {
-            val jobs = List(stopBefore) { index ->
-                launch(Dispatchers.IO) {
+            val jobs = List(10) { index ->
+                launch {
+                    lockResults[index] = manager.tryLock(userId, index.toLong(), 10000, 10021)
+                    val counterBefore = counter
+                    delay(10)
+                    counter = counterBefore + 1
                     manager.unlock(userId, index.toLong())
                 }
             }
             jobs.forEach { it.join() }
         }
 
-        assertEquals(stopBefore, counter)
+        assertEquals(numCoroutines, lockResults.count { it })
 
-        runBlocking {
-            val jobs = List(100 - stopBefore) { index ->
-                launch(Dispatchers.IO) {
-                    manager.unlock(userId, (index + stopBefore).toLong())
-                }
-            }
-            jobs.forEach { it.join() }
-        }
+        assertEquals(counter, numCoroutines)
 
         val connection = getConnection()
         connection.flushCommands()
