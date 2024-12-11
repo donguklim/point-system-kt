@@ -32,7 +32,6 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
         private val reactive = pubSubConnection.reactive()
         var messageFlow : Flow<ChannelMessage<String, String>>
         private val channelName = "user_lock_channel:${userId}"
-        private var isAwaited = false
 
         init {
             reactive.subscribe(channelName).subscribe()
@@ -48,7 +47,7 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
         }
     }
     private val redisClient: RedisClient
-    private val connection: StatefulRedisConnection<String, String>
+    val connection: StatefulRedisConnection<String, String>
     private val commands: RedisCoroutinesCommands<String, String>
     private val pubSubConnection: StatefulRedisPubSubConnection<String, String>
     private val pubsubCommands: RedisCoroutinesCommands<String, String>
@@ -90,7 +89,10 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
         val key = getKey(userId)
 
         val luaScript = """
-            if (redis.call('set', KEYS[1], NX, GET, EX, ARGV[2]) == ARGV[1]) then
+            if (redis.call('set', KEYS[1], ARGV[1], 'NX', 'PX', ARGV[2]) == nil) then
+                return redis.call('pttl', KEYS[1]);
+            end;
+            if(redis.call('get', KEYS[1]) == ARGV[1]) then
                 return nil;
             end;
             return redis.call('pttl', KEYS[1]);
@@ -103,6 +105,7 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
             "$lockId",
             "$leaseTimeMilliSeconds"
         )
+
         var ttl = waitTimeMilliSeconds - (Clock.System.now() - startAt).toLong(DurationUnit.MILLISECONDS)
 
         lockTTl?.let {
@@ -166,17 +169,21 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
             return 0;
             """.trimIndent()
 
-        commands.eval<Long>(
+        val res = commands.eval<Long>(
             luaScript,
             io.lettuce.core.ScriptOutputType.INTEGER,
             arrayOf(key),
             "$lockId",
         )
+
+        res?.let {
+            if (it > 0) pubsubCommands.publish("user_lock_channel:${userId}", "released")
+        }
     }
     suspend inline fun withLock(
         userId: Long,
-        waitTimeMilliSeconds: Long = 500L,
-        leaseTimeMilliSeconds: Long = 10000L,
+        waitTimeMilliSeconds: Long = 5000L,
+        leaseTimeMilliSeconds: Long = 20000L,
         action: () -> Unit
     ): Boolean{
         val randomLockId = Random.nextLong()
