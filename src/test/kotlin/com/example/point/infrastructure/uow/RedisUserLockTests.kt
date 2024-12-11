@@ -66,16 +66,42 @@ class RedisUserLockTests {
     }
 
     @Test
+    fun testSequentialLockRelease() {
+        val userId = (1..300L).random()
+
+        val manager = getManager()
+
+        val lockingId = 1232L
+        var isLocked = false
+        var isAnotherLocked = false
+        val connection = getConnection()
+
+        assertNull(connection.sync().get("user_lock:${userId}"))
+
+        runBlocking {
+            isLocked = manager.tryLock(userId, lockingId, 100, 10021)
+            manager.unlock(userId, lockingId)
+            isAnotherLocked = manager.tryLock(userId, lockingId + 1, 100, 100000)
+            manager.unlock(userId, lockingId + 1)
+        }
+        assertTrue(isLocked)
+        assertTrue(isAnotherLocked)
+
+        connection.flushCommands()
+        connection.close()
+    }
+
+    @Test
     fun testSimultaneousAccesses() {
         val userId = (1..300L).random()
 
         val manager = getManager()
-        val numCoroutines = 100
+        val numCoroutines = 10
         var counter = 0
         val lockResults = MutableList(numCoroutines) { false }
         runBlocking {
 
-            val jobs = List(10) { index ->
+            val jobs = List(numCoroutines) { index ->
                 launch {
                     lockResults[index] = manager.tryLock(userId, index.toLong(), 10000, 10021)
                     val counterBefore = counter

@@ -8,14 +8,14 @@ import io.lettuce.core.api.coroutines
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection
 import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
 import io.lettuce.core.pubsub.api.reactive.ChannelMessage
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitFirst
+import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.Clock
 
 import kotlin.properties.Delegates
@@ -30,20 +30,24 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
     ){
         val mutex = Mutex()
         private val reactive = pubSubConnection.reactive()
-        var messageFlow : Flow<ChannelMessage<String, String>>
         private val channelName = "user_lock_channel:${userId}"
+        private val messageChannel = Channel<String>()
 
         init {
-            reactive.subscribe(channelName).subscribe()
-            messageFlow = reactive.observeChannels().asFlow()
+            GlobalScope.launch {
+                reactive.subscribe(channelName).awaitFirstOrNull()
+                reactive.observeChannels().asFlow().collect { message ->
+                    messageChannel.send(message.message)
+                }
+            }
         }
 
-        suspend fun getMessage(): ChannelMessage<String, String> {
-            return messageFlow.first()
+        suspend fun getMessage(): String {
+            return messageChannel.receive()
         }
 
         suspend fun unsubscribe() {
-            reactive.unsubscribe(channelName).awaitFirst()
+            reactive.unsubscribe(channelName).awaitFirstOrNull()
         }
     }
     private val redisClient: RedisClient
@@ -98,7 +102,7 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
             return redis.call('pttl', KEYS[1]);
             """.trimIndent()
 
-        var lockTTl = commands.eval<Long?>(
+        var lockTtl = commands.eval<Long?>(
             luaScript,
             io.lettuce.core.ScriptOutputType.INTEGER,
             arrayOf(key),
@@ -108,9 +112,7 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
 
         var ttl = waitTimeMilliSeconds - (Clock.System.now() - startAt).toLong(DurationUnit.MILLISECONDS)
 
-        lockTTl?.let {
-            if (it > ttl) return false
-        } ?: return true
+        if (lockTtl == null) return true
 
         var latch: Latch by Delegates.notNull()
         baseMutexes[(userId % numBaseLocks).toInt()].withLock {
@@ -123,11 +125,13 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
         try {
             while (ttl > 0){
                 latch.mutex.withLock {
+                    println("getting message")
                     try {
                         withTimeout(ttl) {
                             latch.getMessage()
+                            println("got message")
                         }
-                        lockTTl = commands.eval<Long?>(
+                        lockTtl = commands.eval<Long?>(
                             luaScript,
                             io.lettuce.core.ScriptOutputType.INTEGER,
                             arrayOf(key),
@@ -138,9 +142,7 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
                         return false
                     }
                 }
-                lockTTl?.let {
-                    if (it > ttl) return false
-                } ?: return true
+                if (lockTtl == null) return true
 
                 ttl = waitTimeMilliSeconds - (Clock.System.now() - startAt).toLong(DurationUnit.MILLISECONDS)
             }
@@ -176,9 +178,12 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
             "$lockId",
         )
 
-        res?.let {
-            if (it > 0) pubsubCommands.publish("user_lock_channel:${userId}", "released")
+        if (res != null && res > 0){
+            delay(10)
+            pubsubCommands.publish("user_lock_channel:${userId}", "released")
         }
+
+
     }
     suspend inline fun withLock(
         userId: Long,
