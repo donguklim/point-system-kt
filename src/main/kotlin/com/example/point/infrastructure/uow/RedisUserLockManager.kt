@@ -1,5 +1,6 @@
 package com.example.point.infrastructure.uow
 
+import kotlin.random.Random
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
@@ -29,7 +30,7 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
     ){
         val mutex = Mutex()
         private val reactive = pubSubConnection.reactive()
-        lateinit var messageFlow : Flow<ChannelMessage<String, String>>
+        var messageFlow : Flow<ChannelMessage<String, String>>
         private val channelName = "user_lock_channel:${userId}"
         private var isAwaited = false
 
@@ -77,6 +78,7 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
 
     suspend fun tryLock(
         userId: Long,
+        lockId: Long,
         waitTimeMilliSeconds: Long = 500L,
         leaseTimeMilliSeconds: Long = 10000L
     ): Boolean {
@@ -86,8 +88,6 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
         val startAt = Clock.System.now()
 
         val key = getKey(userId)
-        val keyValue = "something"
-        // var res = commands.set(key, "something", SetArgs.Builder.nx().px(leaseTimeMilliSeconds))
 
         val luaScript = """
             if (redis.call('set', KEYS[1], NX, GET, EX, ARGV[2]) == ARGV[1]) then
@@ -100,7 +100,7 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
             luaScript,
             io.lettuce.core.ScriptOutputType.INTEGER,
             arrayOf(key),
-            keyValue,
+            "$lockId",
             "$leaseTimeMilliSeconds"
         )
         var ttl = waitTimeMilliSeconds - (Clock.System.now() - startAt).toLong(DurationUnit.MILLISECONDS)
@@ -108,7 +108,6 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
         lockTTl?.let {
             if (it > ttl) return false
         } ?: return true
-
 
         var latch: Latch by Delegates.notNull()
         baseMutexes[(userId % numBaseLocks).toInt()].withLock {
@@ -129,7 +128,7 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
                             luaScript,
                             io.lettuce.core.ScriptOutputType.INTEGER,
                             arrayOf(key),
-                            keyValue,
+                            "$lockId",
                             "$leaseTimeMilliSeconds"
                         )
                     } catch (e: TimeoutCancellationException) {
@@ -156,9 +155,8 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
         return false
     }
 
-    suspend fun unlock(userId:Long){
+    suspend fun unlock(userId:Long, lockId:Long){
         val key = getKey(userId)
-        val keyValue = "something"
 
         val luaScript = """
             if (redis.call('get', KEYS[1]) == ARGV[1]) then
@@ -172,7 +170,26 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
             luaScript,
             io.lettuce.core.ScriptOutputType.INTEGER,
             arrayOf(key),
-            keyValue
+            "$lockId",
         )
+    }
+    suspend inline fun withLock(
+        userId: Long,
+        waitTimeMilliSeconds: Long = 500L,
+        leaseTimeMilliSeconds: Long = 10000L,
+        action: () -> Unit
+    ): Boolean{
+        val randomLockId = Random.nextLong()
+
+        val isLocked = tryLock(userId, randomLockId, waitTimeMilliSeconds, leaseTimeMilliSeconds)
+
+        if (!isLocked) {
+            return false
+        }
+
+        action()
+        unlock(userId, randomLockId)
+
+        return true
     }
 }

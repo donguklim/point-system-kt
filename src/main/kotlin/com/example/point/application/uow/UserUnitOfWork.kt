@@ -28,13 +28,13 @@ abstract class UserUnitOfWork(
         user = null
     }
 
-    abstract suspend fun userUnit( unitLambda: suspend UserUnitOfWork.() -> Unit)
+    abstract suspend fun userUnit(userId: Long, unitLambda: suspend UserUnitOfWork.() -> Unit)
 
     suspend inline fun userAction(
         userId: Long,
         crossinline lambda: suspend UserUnitOfWork.(User) -> Unit,
     ) {
-        userUnit {
+        userUnit(userId) {
             val pointUser = this.begin(userId)
             this.lambda(pointUser)
             this.end()
