@@ -84,7 +84,8 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
         userId: Long,
         lockId: Long,
         waitTimeMilliSeconds: Long = 500L,
-        leaseTimeMilliSeconds: Long = 10000L
+        leaseTimeMilliSeconds: Long = 10000L,
+        spinningTimeMilliSeconds: Long = 100L,
     ): Boolean {
         // Something to consider
         // 1. No timeout check is done for acquiring mutexes,
@@ -121,8 +122,8 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
 
         var remainingWaitTime = waitTimeMilliSeconds - (Clock.System.now() - startAt).toLong(DurationUnit.MILLISECONDS)
 
-        // Assume Redis pub sub message can be lost, and wait for a short period time repeatedly
-        var messageWaitTime = min(remainingWaitTime, 100L)
+        // Assume Redis pub sub message can be lost, and repeatedly check the message with a period of time
+        var messageWaitTime = min(remainingWaitTime, spinningTimeMilliSeconds)
 
         try {
             lockTtl = commands.eval<Long?>(
@@ -155,7 +156,7 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
                 if (lockTtl == null) return true
 
                 remainingWaitTime = waitTimeMilliSeconds - (Clock.System.now() - startAt).toLong(DurationUnit.MILLISECONDS)
-                messageWaitTime = min(remainingWaitTime, messageWaitTime)
+                messageWaitTime = min(remainingWaitTime, spinningTimeMilliSeconds)
             }
         } finally {
             baseMutexes[(userId % numBaseLocks).toInt()].withLock {
