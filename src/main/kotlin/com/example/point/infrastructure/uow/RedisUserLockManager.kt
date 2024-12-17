@@ -32,7 +32,7 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
         private val messageChannel = Channel<String>()
         private var isListening = false
 
-        suspend fun getMessage(): String {
+        suspend fun subscribe(){
             if (!isListening) {
                 reactive.subscribe(channelName).awaitFirstOrNull()
                 reactive.observeChannels().asFlow().collect { message ->
@@ -40,6 +40,12 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
                 }
                 isListening = true
             }
+        }
+
+        suspend fun getMessage(): String {
+            if (!isListening)
+                throw Exception("Latch is not listening Redis channel yet")
+
             return messageChannel.receive()
         }
 
@@ -114,6 +120,7 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
         baseMutexes[(userId % numBaseLocks).toInt()].withLock {
             latch = userIdLatches.getOrPut(userId) { Latch(userId, pubSubConnection) }
             userIdCounts[userId] = userIdCounts.getOrPut(userId) { 0 } + 1
+            latch.subscribe()
         }
 
         var remainingWaitTime = waitTimeMilliSeconds - (Clock.System.now() - startAt).toLong(DurationUnit.MILLISECONDS)
