@@ -7,12 +7,9 @@ import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.api.coroutines
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection
 import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
-import io.lettuce.core.pubsub.api.reactive.ChannelMessage
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.reactive.asFlow
-import kotlinx.coroutines.reactive.awaitFirst
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -33,17 +30,16 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
         private val reactive = pubSubConnection.reactive()
         private val channelName = "user_lock_channel:${userId}"
         private val messageChannel = Channel<String>()
+        private var isListening = false
 
-        init {
-            GlobalScope.launch {
+        suspend fun getMessage(): String {
+            if (!isListening) {
                 reactive.subscribe(channelName).awaitFirstOrNull()
                 reactive.observeChannels().asFlow().collect { message ->
                     messageChannel.send(message.message)
                 }
+                isListening = true
             }
-        }
-
-        suspend fun getMessage(): String {
             return messageChannel.receive()
         }
 
