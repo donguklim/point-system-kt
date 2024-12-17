@@ -110,19 +110,31 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
             "$leaseTimeMilliSeconds"
         )
 
-        var ttl = waitTimeMilliSeconds - (Clock.System.now() - startAt).toLong(DurationUnit.MILLISECONDS)
-
         if (lockTtl == null) return true
 
         var latch: Latch by Delegates.notNull()
+        var isLatchInitialized = false
         baseMutexes[(userId % numBaseLocks).toInt()].withLock {
             latch = userIdLatches.getOrPut(userId) { Latch(userId, pubSubConnection) }
             userIdCounts[userId] = userIdCounts.getOrPut(userId) { 0 } + 1
+            if (userIdCounts[userId] == 1) isLatchInitialized = true
         }
 
-        ttl = waitTimeMilliSeconds - (Clock.System.now() - startAt).toLong(DurationUnit.MILLISECONDS)
+        var ttl = waitTimeMilliSeconds - (Clock.System.now() - startAt).toLong(DurationUnit.MILLISECONDS)
 
         try {
+            if (isLatchInitialized){
+                lockTtl = commands.eval<Long?>(
+                    luaScript,
+                    io.lettuce.core.ScriptOutputType.INTEGER,
+                    arrayOf(key),
+                    "$lockId",
+                    "$leaseTimeMilliSeconds"
+                )
+
+                if (lockTtl == null) return true
+            }
+
             while (ttl > 0){
                 latch.mutex.withLock {
                     println("getting message")
@@ -179,7 +191,6 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
         )
 
         if (res != null && res > 0){
-            delay(10)
             pubsubCommands.publish("user_lock_channel:${userId}", "released")
         }
 
