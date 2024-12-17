@@ -17,6 +17,7 @@ import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
+import kotlin.math.min
 
 import kotlin.properties.Delegates
 import kotlin.time.DurationUnit
@@ -102,18 +103,29 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
             return redis.call('pttl', KEYS[1]);
             """.trimIndent()
 
+        var lockTtl = commands.eval<Long?>(
+            luaScript,
+            io.lettuce.core.ScriptOutputType.INTEGER,
+            arrayOf(key),
+            "$lockId",
+            "$leaseTimeMilliSeconds"
+        )
+
+        if (lockTtl == null) return true
+
         var latch: Latch by Delegates.notNull()
         baseMutexes[(userId % numBaseLocks).toInt()].withLock {
             latch = userIdLatches.getOrPut(userId) { Latch(userId, pubSubConnection) }
             userIdCounts[userId] = userIdCounts.getOrPut(userId) { 0 } + 1
         }
 
-        var ttl = waitTimeMilliSeconds - (Clock.System.now() - startAt).toLong(DurationUnit.MILLISECONDS)
+        var remainingWaitTime = waitTimeMilliSeconds - (Clock.System.now() - startAt).toLong(DurationUnit.MILLISECONDS)
 
-
+        // Assume Redis pub sub message can be lost, and wait for a short period time repeatedly
+        var messageWaitTime = min(remainingWaitTime, 100L)
 
         try {
-            var lockTtl = commands.eval<Long?>(
+            lockTtl = commands.eval<Long?>(
                 luaScript,
                 io.lettuce.core.ScriptOutputType.INTEGER,
                 arrayOf(key),
@@ -122,27 +134,28 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
             )
 
             if (lockTtl == null) return true
-            
-            while (ttl > 0){
+
+            while (remainingWaitTime > 0){
                 latch.mutex.withLock {
                     try {
-                        withTimeout(ttl) {
+                        withTimeout(messageWaitTime) {
                             latch.getMessage()
                         }
-                        lockTtl = commands.eval<Long?>(
-                            luaScript,
-                            io.lettuce.core.ScriptOutputType.INTEGER,
-                            arrayOf(key),
-                            "$lockId",
-                            "$leaseTimeMilliSeconds"
-                        )
-                    } catch (e: TimeoutCancellationException) {
-                        return false
+                    } catch (_: TimeoutCancellationException) {
                     }
+
+                    lockTtl = commands.eval<Long?>(
+                        luaScript,
+                        io.lettuce.core.ScriptOutputType.INTEGER,
+                        arrayOf(key),
+                        "$lockId",
+                        "$leaseTimeMilliSeconds"
+                    )
                 }
                 if (lockTtl == null) return true
 
-                ttl = waitTimeMilliSeconds - (Clock.System.now() - startAt).toLong(DurationUnit.MILLISECONDS)
+                remainingWaitTime = waitTimeMilliSeconds - (Clock.System.now() - startAt).toLong(DurationUnit.MILLISECONDS)
+                messageWaitTime = min(remainingWaitTime, messageWaitTime)
             }
         } finally {
             baseMutexes[(userId % numBaseLocks).toInt()].withLock {
