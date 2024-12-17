@@ -110,17 +110,19 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
 
         var ttl = waitTimeMilliSeconds - (Clock.System.now() - startAt).toLong(DurationUnit.MILLISECONDS)
 
-        var lockTtl = commands.eval<Long?>(
-            luaScript,
-            io.lettuce.core.ScriptOutputType.INTEGER,
-            arrayOf(key),
-            "$lockId",
-            "$leaseTimeMilliSeconds"
-        )
 
-        if (lockTtl == null) return true
 
         try {
+            var lockTtl = commands.eval<Long?>(
+                luaScript,
+                io.lettuce.core.ScriptOutputType.INTEGER,
+                arrayOf(key),
+                "$lockId",
+                "$leaseTimeMilliSeconds"
+            )
+
+            if (lockTtl == null) return true
+            
             while (ttl > 0){
                 latch.mutex.withLock {
                     try {
