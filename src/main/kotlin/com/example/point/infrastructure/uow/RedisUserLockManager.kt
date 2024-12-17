@@ -102,6 +102,14 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
             return redis.call('pttl', KEYS[1]);
             """.trimIndent()
 
+        var latch: Latch by Delegates.notNull()
+        baseMutexes[(userId % numBaseLocks).toInt()].withLock {
+            latch = userIdLatches.getOrPut(userId) { Latch(userId, pubSubConnection) }
+            userIdCounts[userId] = userIdCounts.getOrPut(userId) { 0 } + 1
+        }
+
+        var ttl = waitTimeMilliSeconds - (Clock.System.now() - startAt).toLong(DurationUnit.MILLISECONDS)
+
         var lockTtl = commands.eval<Long?>(
             luaScript,
             io.lettuce.core.ScriptOutputType.INTEGER,
@@ -112,36 +120,12 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
 
         if (lockTtl == null) return true
 
-        var latch: Latch by Delegates.notNull()
-        var isLatchInitialized = false
-        baseMutexes[(userId % numBaseLocks).toInt()].withLock {
-            latch = userIdLatches.getOrPut(userId) { Latch(userId, pubSubConnection) }
-            userIdCounts[userId] = userIdCounts.getOrPut(userId) { 0 } + 1
-            if (userIdCounts[userId] == 1) isLatchInitialized = true
-        }
-
-        var ttl = waitTimeMilliSeconds - (Clock.System.now() - startAt).toLong(DurationUnit.MILLISECONDS)
-
         try {
-            if (isLatchInitialized){
-                lockTtl = commands.eval<Long?>(
-                    luaScript,
-                    io.lettuce.core.ScriptOutputType.INTEGER,
-                    arrayOf(key),
-                    "$lockId",
-                    "$leaseTimeMilliSeconds"
-                )
-
-                if (lockTtl == null) return true
-            }
-
             while (ttl > 0){
                 latch.mutex.withLock {
-                    println("getting message")
                     try {
                         withTimeout(ttl) {
                             latch.getMessage()
-                            println("got message")
                         }
                         lockTtl = commands.eval<Long?>(
                             luaScript,
