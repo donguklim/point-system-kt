@@ -62,7 +62,8 @@ class RedisPointCacheTests {
         val value = connection.sync().get("${RedisKeys.USER_TOTAL_POINT_KEY_PREFIX}$userId")?.toInt() ?: 0
 
         assertEquals(points, value)
-        connection.flushCommands()
+        val command = connection.sync()
+        command.flushdb()
         connection.close()
     }
 
@@ -73,7 +74,8 @@ class RedisPointCacheTests {
 
         val key = "${RedisKeys.USER_TOTAL_POINT_KEY_PREFIX}$userId"
         val connection = getConnection()
-        connection.sync().set(key, points.toString())
+        val command = connection.sync()
+        command.set(key, points.toString())
 
         val increasingValue = (1..3000).random()
 
@@ -83,10 +85,10 @@ class RedisPointCacheTests {
         }
         cache.close()
 
-        val value = connection.sync().get(key)?.toInt() ?: 0
+        val value = command.get(key)?.toInt() ?: 0
 
         assertEquals(points + increasingValue, value)
-        connection.flushCommands()
+        command.flushdb()
         connection.close()
     }
 
@@ -97,7 +99,8 @@ class RedisPointCacheTests {
 
         val key = "${RedisKeys.USER_TOTAL_POINT_KEY_PREFIX}$userId"
         val connection = getConnection()
-        connection.sync().set(key, points.toString())
+        val command = connection.sync()
+        command.set(key, points.toString())
 
         val cache = getCache()
         runBlocking {
@@ -106,7 +109,8 @@ class RedisPointCacheTests {
         }
         cache.close()
 
-        connection.flushCommands()
+
+        command.flushdb()
         connection.close()
     }
 
@@ -123,7 +127,8 @@ class RedisPointCacheTests {
 
         val key = "${RedisKeys.USER_EXPIRY_THRESHOLD_PREFIX}$userId"
         val connection = getConnection()
-        connection.sync().set(key, thresholdInstant.epochSeconds.toString())
+        val command = connection.sync()
+        command.set(key, thresholdInstant.epochSeconds.toString())
 
         val cache = getCache()
         runBlocking {
@@ -132,7 +137,7 @@ class RedisPointCacheTests {
         }
         cache.close()
 
-        connection.flushCommands()
+        command.flushdb()
         connection.close()
     }
 
@@ -148,7 +153,8 @@ class RedisPointCacheTests {
         cache.close()
 
         val connection = getConnection()
-        connection.flushCommands()
+        val command = connection.sync()
+        command.flushdb()
         connection.close()
     }
 
@@ -171,11 +177,12 @@ class RedisPointCacheTests {
 
         val key = "${RedisKeys.USER_EXPIRY_THRESHOLD_PREFIX}$userId"
         val connection = getConnection()
-        val value = connection.sync().get(key)?.toLong()
+        val command = connection.sync()
+        val value = command.get(key)?.toLong()
 
         assertEquals(thresholdValue.toInstant(TimeZone.UTC).epochSeconds, value)
 
-        connection.flushCommands()
+        command.flushdb()
         connection.close()
     }
 }

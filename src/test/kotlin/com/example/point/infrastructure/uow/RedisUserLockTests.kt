@@ -61,7 +61,8 @@ class RedisUserLockTests {
         }
         assertNull(connection.sync().get("user_lock:${userId}"))
 
-        connection.flushCommands()
+        val command = connection.sync()
+        command.flushdb()
         connection.close()
     }
 
@@ -87,7 +88,8 @@ class RedisUserLockTests {
         assertTrue(isLocked)
         assertTrue(isAnotherLocked)
 
-        connection.flushCommands()
+        val command = connection.sync()
+        command.flushdb()
         connection.close()
     }
 
@@ -118,7 +120,8 @@ class RedisUserLockTests {
         assertEquals(counter, numCoroutines)
 
         val connection = getConnection()
-        connection.flushCommands()
+        val command = connection.sync()
+        command.flushdb()
         connection.close()
     }
 }
