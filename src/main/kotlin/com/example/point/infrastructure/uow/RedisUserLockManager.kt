@@ -8,7 +8,6 @@ import io.lettuce.core.api.coroutines
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection
 import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitFirstOrNull
@@ -56,8 +55,8 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
     private val pubSubConnection: StatefulRedisPubSubConnection<String, String>
     private val pubsubCommands: RedisCoroutinesCommands<String, String>
     private val baseMutexes: List<Mutex> = List(numBaseLocks){Mutex()}
-    private val userIdCounts: MutableMap<Long, Int> = mutableMapOf()
-    private val userIdLatches: MutableMap<Long, Latch> = mutableMapOf()
+    private val userIdCountsList: List<MutableMap<Long, Int>> = List(numBaseLocks){mutableMapOf()}
+    private val userIdLatchesList: List<MutableMap<Long, Latch>> = List(numBaseLocks){mutableMapOf()}
 
     init {
         redisClient =
@@ -115,6 +114,8 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
 
         var latch: Latch by Delegates.notNull()
         baseMutexes[(userId % numBaseLocks).toInt()].withLock {
+            val userIdLatches = userIdLatchesList[(userId % numBaseLocks).toInt()]
+            val userIdCounts = userIdCountsList[(userId % numBaseLocks).toInt()]
             latch = userIdLatches.getOrPut(userId) { Latch(userId, pubSubConnection) }
             userIdCounts[userId] = userIdCounts.getOrPut(userId) { 0 } + 1
             latch.subscribe()
@@ -160,6 +161,8 @@ class RedisUserLockManager(host: String, port: Int = 6379, private val numBaseLo
             }
         } finally {
             baseMutexes[(userId % numBaseLocks).toInt()].withLock {
+                val userIdLatches = userIdLatchesList[(userId % numBaseLocks).toInt()]
+                val userIdCounts = userIdCountsList[(userId % numBaseLocks).toInt()]
                 userIdCounts[userId] = userIdCounts[userId]!! - 1
                 if (userIdCounts[userId] == 0){
                     userIdCounts.remove(userId)
