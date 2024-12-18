@@ -6,7 +6,7 @@ services:
     ports:
       - '8080:8080'
     env_file:
-      - .env
+      - .env.docker
     depends_on:
       - mysql_db
       - redis_cache
@@ -17,7 +17,7 @@ services:
   mysql_db:
     image: mysql:9.1
     env_file:
-      - .env
+      - .env.docker
     ports:
       - '3306:3306'
     volumes:
@@ -26,7 +26,7 @@ services:
   redis_cache:
     image: redis:7.4.1-alpine
     env_file:
-      - .env
+      - .env.docker
     ports:
       - '6379:6379'
     volumes:

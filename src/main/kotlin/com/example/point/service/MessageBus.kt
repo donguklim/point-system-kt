@@ -1,6 +1,7 @@
 package com.example.point.service
 
 import com.example.point.adapters.GambleGameFetcher
+import com.example.point.adapters.PointCache
 import com.example.point.adapters.ProductRepository
 import com.example.point.domain.commands.GetDailyChargeCommand
 import com.example.point.domain.commands.PlayGameCommand
@@ -14,7 +15,6 @@ import com.example.point.service.handler.EventHandler
 
 class MessageBus(
     private val uow : UnitOfWork,
-    private val pointCache: RedisPointCache,
     private val gameFetcher: GambleGameFetcher,
     private val productRepository: ProductRepository
 ) {
@@ -23,7 +23,7 @@ class MessageBus(
 
     suspend fun handleEvent(event: UserEvent) {
         when (event) {
-            is NotEnoughPointEvent -> eventHandler.resetTotalPoint(event, pointCache)
+            is NotEnoughPointEvent -> eventHandler.resetTotalPoint(event, uow.pointCache)
         }
     }
 

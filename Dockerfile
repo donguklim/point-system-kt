@@ -13,6 +13,7 @@ FROM amazoncorretto:23-alpine-jdk
 RUN mkdir /app
 
 COPY --from=builder /home/gradle/src/build/libs/*.jar /app/
+COPY .env.docker /app/.env
 
 # build the project avoiding tests
 # RUN ./gradlew clean build -x test

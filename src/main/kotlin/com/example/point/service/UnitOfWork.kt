@@ -6,7 +6,7 @@ import com.example.point.domain.user.models.User
 
 abstract class UnitOfWork(
     private val repository: PointRepository,
-    private val pointCache: PointCache
+    val pointCache: PointCache
 ) {
     var user: User? = null
 
