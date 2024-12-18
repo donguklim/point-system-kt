@@ -1,4 +1,4 @@
-package com.example.point.application.handler
+package com.example.point.service.handler
 
 import com.example.point.adapters.PointCache
 import com.example.point.domain.events.NotEnoughPointEvent

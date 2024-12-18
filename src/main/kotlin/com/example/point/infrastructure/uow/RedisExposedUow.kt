@@ -1,6 +1,6 @@
 package com.example.point.infrastructure.uow
 
-import com.example.point.application.uow.UserUnitOfWork
+import com.example.point.service.UnitOfWork
 import com.example.point.domain.user.errors.TransactionError
 import com.example.point.infrastructure.adapters.ExposedPointRepository
 import com.example.point.infrastructure.adapters.RedisPointCache
@@ -8,14 +8,14 @@ import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 
-class RedisExposedUserUow(
+class RedisExposedUow(
     lockRedisHost: String,
     lockRedisPort: Int = 6379,
     repository: ExposedPointRepository,
     pointCache: RedisPointCache,
-) : UserUnitOfWork(repository, pointCache) {
+) : UnitOfWork(repository, pointCache) {
     private val lockManager = RedisUserLockManager(lockRedisHost, lockRedisPort)
-    override suspend fun userUnit(userId: Long, unitLambda: suspend UserUnitOfWork.() -> Unit) {
+    override suspend fun userUnit(userId: Long, unitLambda: suspend UnitOfWork.() -> Unit) {
         // lock by user ID in order to prevent
         // Duplicate consumptions of the same point charge
         val isLocked = lockManager.withLock(userId) {

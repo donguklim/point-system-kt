@@ -1,7 +1,7 @@
 package com.example.point.infrastructure.uow
 
 import kotlinx.coroutines.*
-import com.example.point.infrastructure.adapters.getIpAddressByHostname
+import com.example.point.infrastructure.getIpAddressByHostname
 import io.github.cdimascio.dotenv.dotenv
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection

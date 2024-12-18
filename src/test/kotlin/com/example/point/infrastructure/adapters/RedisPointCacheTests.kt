@@ -1,5 +1,6 @@
 package com.example.point.infrastructure.adapters
 
+import com.example.point.infrastructure.getIpAddressByHostname
 import io.github.cdimascio.dotenv.dotenv
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
@@ -12,15 +13,6 @@ import kotlin.test.assertNull
 import java.net.InetAddress
 
 
-
-fun getIpAddressByHostname(hostname: String): String {
-    return try {
-        val address = InetAddress.getByName(hostname)
-        address.hostAddress
-    } catch (e: Exception) {
-        "Unable to resolve IP address for hostname: $hostname"
-    }
-}
 
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)

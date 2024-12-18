@@ -1,8 +1,8 @@
-package com.example.point.application.handler
+package com.example.point.service.handler
 
 import com.example.point.adapters.GambleGameFetcher
 import com.example.point.adapters.ProductRepository
-import com.example.point.application.uow.UserUnitOfWork
+import com.example.point.service.UnitOfWork
 import com.example.point.domain.Constants
 import com.example.point.domain.commands.GetDailyChargeCommand
 import com.example.point.domain.commands.PlayGameCommand
@@ -14,7 +14,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
 class CommandHandler{
-    suspend fun getDailyCharge(command: GetDailyChargeCommand, uow: UserUnitOfWork) {
+    suspend fun getDailyCharge(command: GetDailyChargeCommand, uow: UnitOfWork) {
         val time_now = Clock.System.now().toLocalDateTime(TimeZone.UTC)
         uow.userAction(command.userId){ pointUser ->
             pointUser.chargePoints(
@@ -30,7 +30,7 @@ class CommandHandler{
 
     suspend fun playGamble(
         command: PlayGameCommand,
-        uow: UserUnitOfWork,
+        uow: UnitOfWork,
         gameFetcher: GambleGameFetcher
     ): Boolean {
         var ret = false
@@ -50,7 +50,7 @@ class CommandHandler{
 
     suspend fun buyProduct(
         command: PurchaseProductCommand,
-        uow: UserUnitOfWork,
+        uow: UnitOfWork,
         productRepository: ProductRepository
     ) : Boolean{
         var ret = false

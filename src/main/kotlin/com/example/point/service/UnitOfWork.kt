@@ -1,10 +1,10 @@
-package com.example.point.application.uow
+package com.example.point.service
 
 import com.example.point.adapters.PointCache
 import com.example.point.adapters.PointRepository
 import com.example.point.domain.user.models.User
 
-abstract class UserUnitOfWork(
+abstract class UnitOfWork(
     private val repository: PointRepository,
     private val pointCache: PointCache
 ) {
@@ -25,14 +25,13 @@ abstract class UserUnitOfWork(
 
     suspend fun end() {
         commit()
-        user = null
     }
 
-    abstract suspend fun userUnit(userId: Long, unitLambda: suspend UserUnitOfWork.() -> Unit)
+    abstract suspend fun userUnit(userId: Long, unitLambda: suspend UnitOfWork.() -> Unit)
 
     suspend inline fun userAction(
         userId: Long,
-        crossinline lambda: suspend UserUnitOfWork.(User) -> Unit,
+        crossinline lambda: suspend UnitOfWork.(User) -> Unit,
     ) {
         userUnit(userId) {
             val pointUser = this.begin(userId)
