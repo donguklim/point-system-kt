@@ -14,4 +14,6 @@ object Constants {
 
     const val DEFAULT_GAME_BET_PRODUCT_CODE = "game_betting"
     const val DEFAULT_GAME_REWARD_PRODUCT_CODE = "game_reward"
+    const val UNIQUE_USER_PRODUCT_PURCHASE_CODE_FORMAT = "purchase:%s"
+    const val PRODUCT_PURCHASE_CODE_FORMAT = "purchase:%d"
 }
