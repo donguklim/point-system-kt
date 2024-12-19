@@ -56,3 +56,10 @@ kotlin {
 tasks.withType<Test> {
     useJUnitPlatform()
 }
+
+tasks.register<JavaExec>("createDBTables") {
+    group = "application"
+    description = "Create MYSQL DB tables"
+    mainClass.set("com.example.point.DBCreationKt")
+    classpath = sourceSets["main"].runtimeClasspath
+}

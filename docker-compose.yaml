@@ -38,6 +38,21 @@ services:
     volumes:
       - redis_data:/data
 
+  db_creation:
+    profiles: [ "commands" ]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    command: gradle createDBTables
+    env_file:
+      - .env.docker
+    depends_on:
+      mysql_db:
+        condition: service_healthy
+    links:
+      - mysql_db
+
   test:
     profiles: ["test"]
     build:

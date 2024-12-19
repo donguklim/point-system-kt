@@ -3,6 +3,22 @@ A point system implementation using Kotlin
 
 
 ## Running the project
+
+### Creating the DB tables via docker-compose
+```shell
+docker-compose --profile commands build
+docker-compose run --rm db_creation
+```
+
+#### Todo
+Currently, there is only a container for creating DB tables.
+
+Need to make more general container for running multiple commands(
+such as deleting DB tables or some other admin functions) with options.
+
+In this case, the container `create_db` and the main class file `DBCreation.kd` should be renamed. 
+
+### Running the application via docker-compose
 ```shell
 docker-compose build
 docker-compose up
