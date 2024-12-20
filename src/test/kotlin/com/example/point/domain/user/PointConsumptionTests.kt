@@ -105,7 +105,7 @@ class PointConsumptionTests {
             )
         assertTrue(user.usePoints(consumingItem))
 
-        assertEquals(0, user.collectEvents().toList().size)
+        assertEquals(1, user.collectEvents().toList().size)
 
         val consumptions = user.collectConsumptions().toList()
         assertEquals(1, consumptions.size)

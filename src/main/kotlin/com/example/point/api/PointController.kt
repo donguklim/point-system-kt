@@ -30,8 +30,10 @@ class PointController(
         var points = pointCache.getUserPoint(userId)
         if (points != null) return ResponseEntity.ok("$points")
 
+        val expireAtThreshold = pointCache.getUserValidExpiryThreshold(userId)
+
         newSuspendedTransaction(Dispatchers.IO) {
-            points = pointRepository.getPointSum(userId)
+            points = pointRepository.getPointSum(userId, expireAtThreshold)
         }
 
         return ResponseEntity.ok("$points")
