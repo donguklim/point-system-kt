@@ -24,9 +24,14 @@ repositories {
 }
 val exposedVersion: String by project
 val kotlinxCoroutinesVersion: String by project
+val hikariCpVersion: String by project
 dependencies {
-    implementation("org.jetbrains.exposed:exposed-spring-boot-starter:$exposedVersion")
+    // Exposed 
+    implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-kotlin-datetime:$exposedVersion")
+    implementation("com.zaxxer:HikariCP:$hikariCpVersion")
+
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
 
     // for lettuce Redis
