@@ -70,3 +70,9 @@ This `.env.test` file's content is replaced by the content of `.env.docker.test`
 The only difference between `.env.test` and `env.docker.test` are the database host names.  
 host names are just `localhost` in `env.test` 
 while the host names are the host names accessible by `test` container in `env.docker.test`(which are the service names).
+
+
+### SWagger
+
+Swagger Path(with localhost as the host)
+- http://localhost:8080/swagger-ui/index.html 
