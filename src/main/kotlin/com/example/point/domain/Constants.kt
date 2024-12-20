@@ -6,7 +6,7 @@ object Constants {
     // Not allowing the same point event within 1/TIME_RECORDING_SCALE second
     const val TIME_RECORDING_SCALE: Long = 10
     const val POINT_EXPIRY_DAYS: Int = 100
-    const val DAILY_POINT_BONUS: Int = 10
+    const val DAILY_POINT_BONUS: Int = 10000
 
     const val SCALED_START_TIMESTAMP: Long = START_TIMESTAMP * TIME_RECORDING_SCALE
     const val GAMBLE_GAME_CONSUMPTION_CODE_FORMAT = "betting:consume:%d"

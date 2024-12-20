@@ -26,7 +26,11 @@ val exposedVersion: String by project
 val kotlinxCoroutinesVersion: String by project
 val hikariCpVersion: String by project
 dependencies {
-    // Exposed 
+    // For coroutine support of Spring controller classes
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.9.0")
+
+    // Exposed
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-kotlin-datetime:$exposedVersion")

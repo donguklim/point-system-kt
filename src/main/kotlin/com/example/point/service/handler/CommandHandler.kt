@@ -19,7 +19,7 @@ class CommandHandler{
         uow.userAction(command.userId){ pointUser ->
             pointUser.chargePoints(
                 ChargingPoints(
-                    code = "daily:${time_now.year}-${time_now.month}-${time_now.dayOfMonth}",
+                    code = "daily:${time_now.year}-${time_now.monthNumber}-${time_now.dayOfMonth}",
                     numPoints = Constants.DAILY_POINT_BONUS,
                     title="daily bonus",
                     description = "daily bonus",

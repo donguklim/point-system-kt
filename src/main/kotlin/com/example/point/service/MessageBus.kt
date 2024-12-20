@@ -24,19 +24,26 @@ class MessageBus(
     suspend fun handleEvent(event: UserEvent) {
         when (event) {
             is NotEnoughPointEvent -> eventHandler.resetTotalPoint(event, uow.pointCache)
+            else -> throw InvalidEventError(event)
         }
     }
 
-    suspend fun handleCommand(command: UserCommand) {
+    suspend fun handleCommand(command: UserCommand): Boolean {
+
+        var isPointEnough = true
         when (command) {
             is GetDailyChargeCommand -> commandHandler.getDailyCharge(command, uow)
-            is PlayGameCommand -> commandHandler.playGamble(command, uow, gameFetcher)
-            is PurchaseProductCommand -> commandHandler.buyProduct(command, uow, productRepository)
+            is PlayGameCommand -> isPointEnough = commandHandler.playGamble(command, uow, gameFetcher)
+            is PurchaseProductCommand -> isPointEnough = commandHandler.buyProduct(command, uow, productRepository)
+            else -> throw InvalidCommandError(command)
+
         }
 
         uow.user?.collectEvents()?.forEach { event ->
             handleEvent(event)
         }
+
+        return isPointEnough
 
     }
 }

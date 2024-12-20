@@ -6,6 +6,6 @@ import com.example.point.infrastructure.database.PointType
 class InvalidProductError(
     val userId: Long,
     val productCode: String,
-) : RuntimeException(
+) : PointError(
     "Invalid product purchase from User $userId. Product with code ${productCode} does not exist.",
 )

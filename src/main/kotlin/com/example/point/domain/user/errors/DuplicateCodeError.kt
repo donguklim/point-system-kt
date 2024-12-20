@@ -7,6 +7,6 @@ class DuplicateCodeError(
     val userId: Long,
     val pointType: PointType,
     val code: String,
-) : RuntimeException(
+) : PointError(
     "Duplicate point code error - User $userId, point type ${pointType.value} : $code",
 )
