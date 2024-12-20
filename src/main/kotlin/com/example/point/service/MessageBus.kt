@@ -8,6 +8,7 @@ import com.example.point.domain.commands.PlayGameCommand
 import com.example.point.domain.commands.PurchaseProductCommand
 import com.example.point.domain.commands.UserCommand
 import com.example.point.domain.events.NotEnoughPointEvent
+import com.example.point.domain.events.PointChangeEvent
 import com.example.point.domain.events.UserEvent
 import com.example.point.infrastructure.adapters.RedisPointCache
 import com.example.point.service.handler.CommandHandler
@@ -23,7 +24,8 @@ class MessageBus(
 
     suspend fun handleEvent(event: UserEvent) {
         when (event) {
-            is NotEnoughPointEvent -> eventHandler.resetTotalPoint(event, uow.pointCache)
+            is NotEnoughPointEvent -> eventHandler.resetTotalPoints(event, uow.pointCache)
+            is PointChangeEvent -> eventHandler.addUserPoints(event, uow.pointCache)
             else -> throw InvalidEventError(event)
         }
     }

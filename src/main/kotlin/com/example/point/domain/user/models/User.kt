@@ -1,6 +1,7 @@
 package com.example.point.domain.user.models
 
 import com.example.point.domain.events.NotEnoughPointEvent
+import com.example.point.domain.events.PointChangeEvent
 import com.example.point.domain.events.UserEvent
 import com.example.point.domain.user.errors.NotEnoughFetchedPointsError
 import com.example.point.domain.valueObjects.ChargingPoints
@@ -14,6 +15,7 @@ class User(
     private var fetchedPoints: MutableList<ChargedPoints> = mutableListOf()
     private var events: MutableList<UserEvent> = mutableListOf()
     private var fetchedTotalPoints: Int = 0
+    private var totalPointChange: Int = 0
 
     fun usePoints(consumption: Consumption): Boolean {
         val cost = consumption.getRemainingCoast()
@@ -56,15 +58,24 @@ class User(
 
         consumptions.add(consumption)
 
+        totalPointChange -= consumption.cost
+
         return true
     }
 
     fun chargePoints(points: ChargingPoints) {
         chargingPoints.add(points)
+        totalPointChange += points.numPoints
     }
 
     fun collectEvents() =
         sequence<UserEvent> {
+
+            if (totalPointChange != 0) {
+                yield(PointChangeEvent(userId = userId, additionalPoints = totalPointChange))
+                totalPointChange = 0
+            }
+
             while (events.isNotEmpty()) {
                 val event = events[0]
                 events.removeAt(0)

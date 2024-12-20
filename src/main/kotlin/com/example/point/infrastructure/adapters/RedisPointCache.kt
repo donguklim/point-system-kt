@@ -50,8 +50,8 @@ class RedisPointCache(host: String, port: Int = 6379) : PointCache {
         commands.incrby(getUserIdKey(userId), points.toLong())
     }
 
-    override suspend fun getUserPoint(userId: Long): Int {
-        return commands.get(getUserIdKey(userId))?.toInt() ?: 0
+    override suspend fun getUserPoint(userId: Long): Int? {
+        return commands.get(getUserIdKey(userId))?.toInt()
     }
 
     override suspend fun getUserValidExpiryThreshold(userId: Long): LocalDateTime? {

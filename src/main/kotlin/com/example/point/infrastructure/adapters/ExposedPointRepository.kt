@@ -20,13 +20,9 @@ import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.exposed.exceptions.ExposedSQLException
-import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.greater
-import org.jetbrains.exposed.sql.alias
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.batchInsert
-import org.jetbrains.exposed.sql.sum
 import java.sql.SQLIntegrityConstraintViolationException
 import kotlin.sequences.Sequence
 
@@ -87,6 +83,15 @@ class ExposedPointRepository(
                 yield(ChargedPoints(it[PointDetails.chargeId], it[PointDetails.expireAt], it[pointSum]!!))
             }
         }
+
+    override suspend fun getPointSum(userId: Long, expireAtThreshold: LocalDateTime?): Int {
+        val pointSum = PointDetails.numPoints.sum()
+        val threshold = expireAtThreshold ?: Clock.System.now().toLocalDateTime(TimeZone.UTC)
+
+        return PointDetails.select(pointSum).where {
+            (PointDetails.userId eq userId) and (PointDetails.expireAt greater threshold)
+        }.first()[pointSum] ?: 0
+    }
 
     override suspend fun updateCharges(
         userId: Long,

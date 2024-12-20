@@ -1,6 +1,5 @@
 package com.example.point.adapters
 
-import com.example.point.domain.gamble.models.BettingGame
 import kotlinx.datetime.LocalDateTime
 
 interface PointCache {
@@ -14,7 +13,7 @@ interface PointCache {
         points: Int,
     )
 
-    suspend fun getUserPoint(userId: Long): Int
+    suspend fun getUserPoint(userId: Long): Int?
 
     suspend fun getUserValidExpiryThreshold(userId: Long): LocalDateTime?
 

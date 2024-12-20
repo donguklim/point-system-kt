@@ -97,7 +97,7 @@ class RedisPointCacheTests {
         val cache = getCache()
         runBlocking {
             val cachedPoints = cache.getUserPoint(userId)
-            assertEquals(points, cachedPoints)
+            assertEquals(points, cachedPoints!!)
         }
         cache.close()
 

@@ -20,6 +20,11 @@ interface PointRepository {
         expireAtThreshold: LocalDateTime? = null
     ): Flow<ChargedPoints>
 
+    suspend fun getPointSum(
+        userId: Long,
+        expireAtThreshold: LocalDateTime? = null
+    ): Int
+
     suspend fun updateCharges(
         userId: Long,
         chargingPointsList: List<ChargingPoints>,
