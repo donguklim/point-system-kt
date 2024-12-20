@@ -15,7 +15,6 @@ class User(
     private var fetchedPoints: MutableList<ChargedPoints> = mutableListOf()
     private var events: MutableList<UserEvent> = mutableListOf()
     private var fetchedTotalPoints: Int = 0
-    private var totalPointChange: Int = 0
 
     fun usePoints(consumption: Consumption): Boolean {
         val cost = consumption.getRemainingCoast()
@@ -58,24 +57,28 @@ class User(
 
         consumptions.add(consumption)
 
-        totalPointChange -= consumption.cost
+        events.add(
+            PointChangeEvent(
+                userId = userId,
+                additionalPoints = -consumption.cost,
+            )
+        )
 
         return true
     }
 
     fun chargePoints(points: ChargingPoints) {
         chargingPoints.add(points)
-        totalPointChange += points.numPoints
+        events.add(
+            PointChangeEvent(
+                userId = userId,
+                additionalPoints = points.numPoints,
+            )
+        )
     }
 
     fun collectEvents() =
         sequence<UserEvent> {
-
-            if (totalPointChange != 0) {
-                yield(PointChangeEvent(userId = userId, additionalPoints = totalPointChange))
-                totalPointChange = 0
-            }
-
             while (events.isNotEmpty()) {
                 val event = events[0]
                 events.removeAt(0)
