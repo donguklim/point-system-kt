@@ -9,6 +9,7 @@ import com.example.point.infrastructure.adapters.RedisPointCache
 import com.example.point.infrastructure.database.PointEvents
 import com.example.point.service.MessageBus
 import com.example.point.service.PointServiceError
+import com.example.point.service.handler.CommandResult
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -99,10 +100,10 @@ class PointController(
     @PostMapping("/daily-point")
     suspend fun dailyPoint(): ResponseEntity<String> {
         val userId = 1234L
-        val res: Boolean
+        val result: CommandResult
 
         try {
-            res = messageBus.handleCommand(
+            result = messageBus.handleCommand(
                 GetDailyChargeCommand(userId)
             )
         } catch (error: PointError) {
@@ -111,7 +112,7 @@ class PointController(
             return ResponseEntity.internalServerError().body(error.message)
         }
 
-        if (!res) return ResponseEntity.badRequest().body("Not enough points")
+        if (!result.isPointEnough) return ResponseEntity.badRequest().body("Not enough points")
 
         return ResponseEntity.ok().body("Received daily charge")
     }
@@ -119,10 +120,10 @@ class PointController(
     @PostMapping("/play-game")
     suspend fun playGame(@RequestBody bet: PlayGameRequest): ResponseEntity<String> {
         val userId = 1234L
-        val res: Boolean
+        val result: CommandResult
 
         try {
-            res = messageBus.handleCommand(
+            result = messageBus.handleCommand(
                 PlayGameCommand(userId, bet.point)
             )
         } catch (error: PointError) {
@@ -131,7 +132,7 @@ class PointController(
             return ResponseEntity.internalServerError().body(error.message)
         }
 
-        if (!res) return ResponseEntity.badRequest().body("Not enough points")
+        if (!result.isPointEnough) return ResponseEntity.badRequest().body("Not enough points")
 
         return ResponseEntity.ok().body("played game")
     }
@@ -139,10 +140,10 @@ class PointController(
     @PostMapping("/purchase")
     suspend fun purchase(@RequestBody purchasing: PurchaseRequest): ResponseEntity<String> {
         val userId = 1234L
-        val res: Boolean
+        val result: CommandResult
 
         try {
-            res = messageBus.handleCommand(
+            result = messageBus.handleCommand(
                 PurchaseProductCommand(userId, purchasing.productCode)
             )
         } catch (error: PointError) {
@@ -151,7 +152,7 @@ class PointController(
             return ResponseEntity.internalServerError().body(error.message)
         }
 
-        if (!res) return ResponseEntity.badRequest().body("Not enough points")
+        if (!result.isPointEnough) return ResponseEntity.badRequest().body("Not enough points")
 
         return ResponseEntity.ok().body("purchase complete")
     }

@@ -10,6 +10,7 @@ import com.example.point.domain.events.NotEnoughPointEvent
 import com.example.point.domain.events.PointChangeEvent
 import com.example.point.domain.events.UserEvent
 import com.example.point.service.handler.CommandHandler
+import com.example.point.service.handler.CommandResult
 import com.example.point.service.handler.EventHandler
 
 class MessageBus(
@@ -28,22 +29,22 @@ class MessageBus(
         }
     }
 
-    suspend fun handleCommand(command: UserCommand): Boolean {
+    suspend fun handleCommand(command: UserCommand): CommandResult {
 
-        var isPointEnough = true
-        when (command) {
+
+        val commandResult = when (command) {
             is GetDailyChargeCommand -> commandHandler.getDailyCharge(command, uow)
-            is PlayGameCommand -> isPointEnough = commandHandler.playGamble(command, uow, gameFetcher)
-            is PurchaseProductCommand -> isPointEnough = commandHandler.buyProduct(command, uow, productRepository)
+            is PlayGameCommand -> commandHandler.playGamble(command, uow, gameFetcher)
+            is PurchaseProductCommand -> commandHandler.buyProduct(command, uow, productRepository)
             else -> throw InvalidCommandError(command)
 
         }
 
-        uow.user?.collectEvents()?.forEach { event ->
+        commandResult.user.collectEvents().forEach { event ->
             handleEvent(event)
         }
 
-        return isPointEnough
+        return commandResult
 
     }
 }
