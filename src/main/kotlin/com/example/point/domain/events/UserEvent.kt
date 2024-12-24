@@ -1,6 +1,6 @@
 package com.example.point.domain.events
 
-open class UserEvent(
+sealed class UserEvent(
     val userId: Long
 )
 

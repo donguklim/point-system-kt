@@ -1,7 +1,6 @@
 package com.example.point.service
 
 import com.example.point.adapters.GambleGameFetcher
-import com.example.point.adapters.PointCache
 import com.example.point.adapters.ProductRepository
 import com.example.point.domain.commands.GetDailyChargeCommand
 import com.example.point.domain.commands.PlayGameCommand
@@ -10,7 +9,6 @@ import com.example.point.domain.commands.UserCommand
 import com.example.point.domain.events.NotEnoughPointEvent
 import com.example.point.domain.events.PointChangeEvent
 import com.example.point.domain.events.UserEvent
-import com.example.point.infrastructure.adapters.RedisPointCache
 import com.example.point.service.handler.CommandHandler
 import com.example.point.service.handler.EventHandler
 

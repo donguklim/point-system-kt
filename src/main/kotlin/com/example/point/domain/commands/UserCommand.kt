@@ -1,6 +1,6 @@
 package com.example.point.domain.commands
 
-open class UserCommand(
+sealed class UserCommand(
     val userId: Long,
 )
 
