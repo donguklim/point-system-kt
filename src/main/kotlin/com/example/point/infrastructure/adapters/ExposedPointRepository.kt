@@ -26,6 +26,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.greater
 import java.sql.SQLIntegrityConstraintViolationException
 import kotlin.sequences.Sequence
 
+
 class ExposedPointRepository(
     private val expiryDays: Int = POINT_EXPIRY_DAYS,
     private val chunkSize: Int = 2000,
